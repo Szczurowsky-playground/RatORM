@@ -322,6 +322,49 @@ public class MongoDB implements Database {
     }
 
     @Override
+    public void delete(Class<?> modelClass, Object object) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        this.objects.remove(object);
+        if (!connected)
+            throw new NotConnectedToDatabaseException();
+        Document key = new Document();
+        for (Field declaredField : modelClass.getDeclaredFields()) {
+            if (declaredField.isAnnotationPresent(ModelField.class)) {
+                Class<? extends Serializer> serializer = this.serializers.get(declaredField.getType());
+                if (Map.class.isAssignableFrom(declaredField.getType()))
+                    serializer =  MapSerializer.class;
+                if (serializer == null) {
+                    throw new NoSerializerFoundException();
+                }
+                declaredField.setAccessible(true);
+                Object value = declaredField.get(object);
+                boolean found = false;
+                String methodName = "serialize";
+                if (Map.class.isAssignableFrom(declaredField.getType()))
+                    methodName+="Map";
+                for (Method declaredMethod : serializer.getDeclaredMethods()) {
+                    if (declaredMethod.getName().equals(methodName)) {
+                        found = true;
+                        String name = declaredField.getAnnotation(ModelField.class).name();
+                        if (name.equals("")) {
+                            name = declaredField.getName();
+                        }
+                        String serialized;
+                        if (Map.class.isAssignableFrom(declaredField.getType()))
+                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
+                        else
+                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value);
+                        if (declaredField.getAnnotation(ModelField.class).isPrimaryKey())
+                            key.put(name, serialized);
+                    }
+                }
+                if (!found)
+                    throw new NoSerializerFoundException();
+            }
+        }
+        this.collections.get(modelClass).deleteOne(key);
+    }
+
+    @Override
     public boolean isConnectionValid() {
         try {
             this.client.getAddress();
