@@ -7,10 +7,8 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface DatabaseField {
-    String name();
-
-    Class< ?> type();
+public @interface ModelField {
+    String name() default "";
 
     boolean isPrimaryKey() default false;
 }

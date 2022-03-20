@@ -1,4 +1,6 @@
-package pl.szczurowsky.ratorm.serializers;
+package pl.szczurowsky.ratorm.serializers.basic;
+
+import pl.szczurowsky.ratorm.serializers.Serializer;
 
 public class StringSerializer implements Serializer {
 
