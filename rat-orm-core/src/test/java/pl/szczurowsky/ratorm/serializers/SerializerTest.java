@@ -39,12 +39,6 @@ public class SerializerTest {
         map.put("Test2", 2);
         String serializedMap = serializer.serializeMap(map, serializers);
         Map<String, Integer> map2 = serializer.deserializeMap(serializedMap, serializers);
-        for (String s : map.keySet()) {
-            System.out.println(s);
-        }
-        for (String s : map2.keySet()) {
-            System.out.println(s);
-        }
         Assertions.assertEquals(map2, map);
     }
 

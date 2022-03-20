@@ -11,6 +11,13 @@
 
     <artifactId>rat-orm-mongodb</artifactId>
 
+    <repositories>
+        <repository>
+            <id>minecodes-repository</id>
+            <url>https://repository.minecodes.pl/releases</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.mongodb</groupId>
