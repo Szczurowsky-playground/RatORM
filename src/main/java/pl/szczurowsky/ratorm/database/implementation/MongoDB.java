@@ -14,10 +14,8 @@ import pl.szczurowsky.ratorm.exception.ModelAnnotationMissingException;
 import pl.szczurowsky.ratorm.exception.NotConnectedToDatabaseException;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MongoDB implements Database {
@@ -66,13 +64,13 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public Object[] readAll(Class<?> modelClass) {
-        return this.objects.keySet().stream().filter(k -> k.getClass().equals(modelClass)).toArray();
+    public <T> List<T> readAll(Class<T> modelClass) {
+        return this.objects.keySet().stream().filter(k -> k.getClass().equals(modelClass)).map(k -> (T) k).collect(Collectors.toList());
     }
 
     @Override
-    public Object[] filter(Class<?> modelClass, String field, FilterExpression expression, Object value) {
-        Stream<Object> objects = this.objects.keySet().stream();
+    public <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value) {
+        Stream<?> objects = this.objects.keySet().stream();
         switch (expression) {
             case GREATER_THAN:
                 return objects.filter(o -> {
@@ -84,7 +82,7 @@ public class MongoDB implements Database {
                         e.printStackTrace();
                     }
                     return false;
-                }).toArray();
+                }).map(k -> (T) k).collect(Collectors.toList());
             case LESS_THAN:
                 return objects.filter(o -> {
                     try {
@@ -95,7 +93,7 @@ public class MongoDB implements Database {
                         e.printStackTrace();
                     }
                     return false;
-                }).toArray();
+                }).map(k -> (T) k).collect(Collectors.toList());
             case EQUALS:
                 return objects.filter(o -> {
                     try {
@@ -106,7 +104,7 @@ public class MongoDB implements Database {
                         e.printStackTrace();
                     }
                     return false;
-                }).toArray();
+                }).map(k -> (T) k).collect(Collectors.toList());
             case NOT_EQUALS:
                 return objects.filter(o -> {
                     try {
@@ -117,7 +115,7 @@ public class MongoDB implements Database {
                         e.printStackTrace();
                     }
                     return false;
-                }).toArray();
+                }).map(k -> (T) k).collect(Collectors.toList());
             case GREATER_THAN_EQUALS:
                 return objects.filter(o -> {
                     try {
@@ -128,7 +126,7 @@ public class MongoDB implements Database {
                         e.printStackTrace();
                     }
                     return false;
-                }).toArray();
+                }).map(k -> (T) k).collect(Collectors.toList());
             case LESS_THAN_EQUALS:
                 return objects.filter(o -> {
                     try {
@@ -139,9 +137,9 @@ public class MongoDB implements Database {
                         e.printStackTrace();
                     }
                     return false;
-                }).toArray();
+                }).map(k -> (T) k).collect(Collectors.toList());
             default:
-                return new Object[0];
+                return new LinkedList<>();
         }
     }
 

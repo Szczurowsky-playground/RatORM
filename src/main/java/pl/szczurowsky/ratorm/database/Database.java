@@ -5,6 +5,7 @@ import pl.szczurowsky.ratorm.exception.AlreadyConnectedException;
 import pl.szczurowsky.ratorm.exception.ModelAnnotationMissingException;
 import pl.szczurowsky.ratorm.exception.NotConnectedToDatabaseException;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,7 +45,7 @@ public interface Database {
      * @param modelClass Model to match
      * @return List of objects
      */
-    Object[] readAll(Class<?> modelClass);
+    public <T> List<T> readAll(Class<T> modelClass);
 
     /**
      * Returns all object which match
@@ -54,7 +55,7 @@ public interface Database {
      * @param value matched value to field
      * @return Array of objects which matched expression
      */
-    Object[] filter(Class<?> modelClass, String field, FilterExpression expression, Object value);
+    <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value);
 
     /**
     Checks is connection to database valid
