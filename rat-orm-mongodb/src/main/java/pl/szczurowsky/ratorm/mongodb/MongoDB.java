@@ -1,4 +1,4 @@
-package pl.szczurowsky.ratorm.database.implementation;
+package pl.szczurowsky.ratorm.mongodb;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;

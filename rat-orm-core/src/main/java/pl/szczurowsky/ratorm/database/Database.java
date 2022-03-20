@@ -86,12 +86,14 @@ public interface Database {
     /**
      * Returns all object which match Model
      * @param modelClass Model to match
+     * @param <T> Model class
      * @return List of objects
      */
     <T> List<T> readAll(Class<T> modelClass);
 
     /**
      * Returns all object which match
+     * @param <T> Model class
      * @param modelClass class of object model
      * @param field matching field
      * @param expression expression from enum
@@ -101,7 +103,8 @@ public interface Database {
     <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value);
 
     /**
-    Checks is connection to database valid
+     * Checks is connection to database valid
+     * @return boolean
      */
     boolean isConnectionValid();
 
