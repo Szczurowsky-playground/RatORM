@@ -103,6 +103,18 @@ public interface Database {
     <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value);
 
     /**
+     * Deletes object in database which matches provided object
+     * @param modelClass Model class
+     * @param object object
+     * @throws NotConnectedToDatabaseException Not connected to database
+     * @throws NoSerializerFoundException Serializer for field model wasn't found
+     * @throws InstantiationException Java exception when model class wasn't able to create own instance
+     * @throws IllegalAccessException Java security exception
+     * @throws InvocationTargetException Java exception when wasn't able to invoke method
+     */
+    void delete(Class<?> modelClass, Object object) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException;
+
+    /**
      * Checks is connection to database valid
      * @return boolean
      */

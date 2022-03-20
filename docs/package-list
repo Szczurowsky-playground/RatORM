@@ -1,8 +1,2 @@
-pl.szczurowsky.ratorm.annotation
 pl.szczurowsky.ratorm.database
-pl.szczurowsky.ratorm.enums
-pl.szczurowsky.ratorm.exception
 pl.szczurowsky.ratorm.mongodb
-pl.szczurowsky.ratorm.serializers
-pl.szczurowsky.ratorm.serializers.basic
-pl.szczurowsky.ratorm.serializers.primitive

@@ -41,7 +41,7 @@ Framework Core
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-core</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 </dependency>
 ```
 ```groovy
@@ -54,7 +54,7 @@ Database
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-type</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 </dependency>
 ```
 ```groovy
