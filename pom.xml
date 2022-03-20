@@ -13,4 +13,15 @@
         <module>rat-orm-core</module>
     </modules>
 
+    <distributionManagement>
+        <repository>
+            <id>minecodes-repository</id>
+            <url>https://repository.minecodes.pl/releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>minecodes-repository</id>
+            <url>https://repository.minecodes.pl/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
