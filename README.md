@@ -9,7 +9,7 @@
 
 | Branch  |     | Tests                                                                                               | Code Quality |
 |--------|-----|-----------------------------------------------------------------------------------------------------|--------------|
-| master  |     | ![CircleCI](https://img.shields.io/circleci/build/gh/szczurowsky/ratorm/master?style=for-the-badge) | ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Szczurowsky/ratorm/master?style=for-the-badge) |
+| master  |     | ![CircleCI](https://img.shields.io/circleci/build/github/Szczurowsky/RatORM/master?style=for-the-badge) | ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Szczurowsky/ratorm/master?style=for-the-badge) |
 
 ## Usefull links
 Helpful links:
