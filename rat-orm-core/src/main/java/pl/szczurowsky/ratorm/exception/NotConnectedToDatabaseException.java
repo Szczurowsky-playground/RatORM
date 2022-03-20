@@ -1,4 +1,4 @@
-package pl.szczurowsky.ratorm.exceptions;
+package pl.szczurowsky.ratorm.exception;
 
 public class NotConnectedToDatabaseException extends Exception {
     public NotConnectedToDatabaseException() {
