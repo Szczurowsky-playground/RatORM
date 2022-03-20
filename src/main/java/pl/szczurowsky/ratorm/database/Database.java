@@ -3,8 +3,10 @@ package pl.szczurowsky.ratorm.database;
 import pl.szczurowsky.ratorm.enums.FilterExpression;
 import pl.szczurowsky.ratorm.exception.AlreadyConnectedException;
 import pl.szczurowsky.ratorm.exception.ModelAnnotationMissingException;
+import pl.szczurowsky.ratorm.exception.NoSerializerFoundException;
 import pl.szczurowsky.ratorm.exception.NotConnectedToDatabaseException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +40,7 @@ public interface Database {
      * @param object object
      * @param modelClass class of object model
      */
-    void save(Object object, Class<?> modelClass);
+    void save(Object object, Class<?> modelClass) throws NoSerializerFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException;
 
     /**
      * Returns all object which match Model
