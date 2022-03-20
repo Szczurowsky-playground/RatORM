@@ -137,7 +137,7 @@ public class MongoDB implements Database {
             if (declaredMethod.getName().equals(methodName)) {
                 found = true;
                 if (Map.class.isAssignableFrom(value.getClass()))
-                    serialized = (String) declaredMethod.invoke(valueSerializer.newInstance(), value, this.serializers, value.getClass());
+                    serialized = (String) declaredMethod.invoke(valueSerializer.newInstance(), value, this.serializers);
                 else
                     serialized = (String) declaredMethod.invoke(valueSerializer.newInstance(), value);
             }
@@ -180,7 +180,7 @@ public class MongoDB implements Database {
                             found = true;
                             Object deserialized;
                             if (Map.class.isAssignableFrom(declaredField.getType()))
-                                deserialized = declaredMethod.invoke(serializer.newInstance(), value, this.serializers, declaredField.getType());
+                                deserialized = declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
                             else
                                 deserialized = declaredMethod.invoke(serializer.newInstance(), value);
                             declaredField.set(initializedClass, deserialized);
