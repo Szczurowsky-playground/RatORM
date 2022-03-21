@@ -2,7 +2,11 @@ package pl.szczurowsky.ratorm.serializers;
 
 import pl.szczurowsky.ratorm.exception.SerializerException;
 
-public interface Serializer {
+/**
+ * Interface for serializers which provide easy data-saving custom data-types to database
+ * @param <T> Type of serialized/deserialize object
+ */
+public interface Serializer<T> {
 
     /**
      * Serialize provided object to string
@@ -12,4 +16,10 @@ public interface Serializer {
      */
     String serialize(Object providedObject) throws SerializerException;
 
+    /**
+     * Deserialize provided string to T
+     * @param receivedObject Serialized object
+     * @return Deserialized object
+     */
+    T deserialize(String receivedObject);
 }

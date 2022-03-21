@@ -153,54 +153,6 @@ public class Example {
 
 </details>
 
-### Fetch from database
-
-<details>
-<summary>Every model</summary>
-
-```java
-public class Example {
-    
-    Database database;
-    
-    public void connect() {
-        // Replace MongoDB() with your database type
-        this.database = new MongoDB();
-        this.database.connect("URI String");
-        this.database.initModel(ExampleModel.class);
-        this.database.fetchAll(ExampleModel.class);
-        // Data being saved to internal cache
-    }
-    
-}
-
-```
-
-</details>
-
-<details>
-<summary>Exact model(s)</summary>
-
-```java
-public class Example {
-    
-    Database database;
-    
-    public void connect() {
-        // Replace MongoDB() with your database type
-        this.database = new MongoDB();
-        this.database.connect("URI String");
-        this.database.initModel(ExampleModel.class);
-        this.database.fetchMatching(ExampleModel.class, "Key", "Case");
-        // Data being saved to internal cache
-    }
-    
-}
-
-```
-
-</details>
-
 ### Read model(s)
 
 <details>

@@ -19,7 +19,6 @@ import pl.szczurowsky.ratorm.serializers.MapSerializer;
 import pl.szczurowsky.ratorm.serializers.Serializer;
 import pl.szczurowsky.ratorm.serializers.UuidSerializer;
 import pl.szczurowsky.ratorm.serializers.basic.*;
-import pl.szczurowsky.ratorm.serializers.primitive.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -44,20 +43,20 @@ public class MongoDB implements Database {
     public MongoDB() {
         this.serializers.put(String.class, StringSerializer.class);
         this.serializers.put(Character.class, CharacterSerializer.class);
-        this.serializers.put(char.class, CharSerializer.class);
+        this.serializers.put(char.class, CharacterSerializer.class);
         this.serializers.put(Integer.class, IntegerSerializer.class);
-        this.serializers.put(int.class, IntSerializer.class);
+        this.serializers.put(int.class, IntegerSerializer.class);
         this.serializers.put(Long.class, LongSerializer.class);
-        this.serializers.put(long.class, LongPrimSerializer.class);
+        this.serializers.put(long.class, LongSerializer.class);
         this.serializers.put(BigInteger.class, BigIntSerializer.class);
         this.serializers.put(Float.class, FloatSerializer.class);
-        this.serializers.put(float.class, FloatPrimSerializer.class);
+        this.serializers.put(float.class, FloatSerializer.class);
         this.serializers.put(Boolean.class, BooleanSerializer.class);
-        this.serializers.put(boolean.class, BoolSerializer.class);
+        this.serializers.put(boolean.class, BooleanSerializer.class);
         this.serializers.put(Double.class, DoubleSerializer.class);
-        this.serializers.put(double.class, DoublePrimSerializer.class);
+        this.serializers.put(double.class, DoubleSerializer.class);
         this.serializers.put(Short.class, ShortSerializer.class);
-        this.serializers.put(short.class, ShortPrimSerializer.class);
+        this.serializers.put(short.class, ShortSerializer.class);
         this.serializers.put(UUID.class, UuidSerializer.class);
     }
 
@@ -96,7 +95,13 @@ public class MongoDB implements Database {
         if (!this.database.listCollectionNames().into(new ArrayList<>()).contains(tableName))
             this.database.createCollection(tableName);
         this.collections.put(modelClass ,this.database.getCollection(tableName));
-
+        if (modelClass.getAnnotation(Model.class).autoFetch()) {
+            try {
+                this.fetchAll(modelClass);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -322,7 +327,7 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public void delete(Class<?> modelClass, Object object) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    public void delete(Object object, Class<?> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
         this.objects.remove(object);
         if (!connected)
             throw new NotConnectedToDatabaseException();
@@ -362,6 +367,7 @@ public class MongoDB implements Database {
             }
         }
         this.collections.get(modelClass).deleteOne(key);
+        this.objects.remove(object);
     }
 
     @Override

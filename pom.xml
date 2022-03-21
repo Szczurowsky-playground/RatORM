@@ -7,7 +7,7 @@
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm</artifactId>
     <packaging>pom</packaging>
-    <version>1.1</version>
+    <version>1.2</version>
     <modules>
         <module>rat-orm-mongodb</module>
         <module>rat-orm-core</module>
