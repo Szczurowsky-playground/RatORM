@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapSerializer implements Serializer{
+public class MapSerializer implements Serializer<Object> {
 
     public <K, V> Map<K, V> deserializeMap(String receivedMap, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws ClassNotFoundException {
         JSONObject JSONObject = new JSONObject(receivedMap);
@@ -77,6 +77,11 @@ public class MapSerializer implements Serializer{
 
     @Override
     public String serialize(Object providedObject) throws SerializerException {
+        return null;
+    }
+
+    @Override
+    public Object deserialize(String receivedObject) {
         return null;
     }
 }
