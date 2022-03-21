@@ -11,4 +11,5 @@ public @interface Model {
 
     String tableName();
 
+    boolean autoFetch() default true;
 }

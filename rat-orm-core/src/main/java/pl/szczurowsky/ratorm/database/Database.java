@@ -112,7 +112,7 @@ public interface Database {
      * @throws IllegalAccessException Java security exception
      * @throws InvocationTargetException Java exception when wasn't able to invoke method
      */
-    void delete(Class<?> modelClass, Object object) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException;
+    void delete(Object object, Class<?> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException;
 
     /**
      * Checks is connection to database valid

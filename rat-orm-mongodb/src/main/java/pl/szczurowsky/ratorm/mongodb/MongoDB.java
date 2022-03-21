@@ -95,7 +95,13 @@ public class MongoDB implements Database {
         if (!this.database.listCollectionNames().into(new ArrayList<>()).contains(tableName))
             this.database.createCollection(tableName);
         this.collections.put(modelClass ,this.database.getCollection(tableName));
-
+        if (modelClass.getAnnotation(Model.class).autoFetch()) {
+            try {
+                this.fetchAll(modelClass);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -321,7 +327,7 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public void delete(Class<?> modelClass, Object object) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    public void delete(Object object, Class<?> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
         this.objects.remove(object);
         if (!connected)
             throw new NotConnectedToDatabaseException();
@@ -361,6 +367,7 @@ public class MongoDB implements Database {
             }
         }
         this.collections.get(modelClass).deleteOne(key);
+        this.objects.remove(object);
     }
 
     @Override
