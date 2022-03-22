@@ -30,6 +30,7 @@ public class MongoDB implements Database {
     private MongoClient client;
     private MongoDatabase database;
     private final HashMap<Class<?>, Class<? extends Serializer>> serializers = new HashMap<>();
+    private final HashMap<Object, Class<?>> cachedObjects = new HashMap<>();
     private final HashMap<Class<?>, MongoCollection<Document>> collections = new HashMap<>();
     private boolean connected;
 
@@ -92,7 +93,7 @@ public class MongoDB implements Database {
             if (!this.database.listCollectionNames().into(new ArrayList<>()).contains(tableName))
                 this.database.createCollection(tableName);
             this.collections.put(modelClass ,this.database.getCollection(tableName));
-            if (modelClass.getAnnotation(Model.class).autoFetch()) {
+            if (modelClass.getAnnotation(Model.class).cached() && modelClass.getAnnotation(Model.class).autoFetch()) {
                 try {
                     this.fetchAll(modelClass);
                 } catch (Exception e) {
@@ -198,6 +199,8 @@ public class MongoDB implements Database {
                         throw new NoSerializerFoundException();
                 }
             }
+            if (modelClass.getAnnotation(Model.class).cached())
+                this.cachedObjects.put(initializedClass, modelClass);
             deserializedObjects.add(initializedClass);
             if (toBeFixed)
                 this.save(initializedClass, modelClass);
@@ -251,6 +254,8 @@ public class MongoDB implements Database {
             }
         }
         this.collections.get(modelClass).updateOne(key, new Document("$set", document), new UpdateOptions().upsert( true ));
+        if (modelClass.getAnnotation(Model.class).cached())
+            this.cachedObjects.put(object, modelClass);
     }
 
     @Override
@@ -331,6 +336,8 @@ public class MongoDB implements Database {
     public void delete(Object object, Class<?> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
+        if (modelClass.getAnnotation(Model.class).cached())
+            this.cachedObjects.remove(object);
         Document key = new Document();
         for (Field declaredField : modelClass.getDeclaredFields()) {
             if (declaredField.isAnnotationPresent(ModelField.class)) {
@@ -367,6 +374,43 @@ public class MongoDB implements Database {
             }
         }
         this.collections.get(modelClass).deleteOne(key);
+    }
+
+    @Override
+    public <T> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException {
+        if (!modelClass.getAnnotation(Model.class).cached())
+            throw new NotCachedException();
+        return this.cachedObjects.keySet().stream().filter(k -> k.getClass().equals(modelClass)).map(k -> (T) k).collect(Collectors.toList());
+    }
+
+    @Override
+    public <T> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException {
+        if (!modelClass.getAnnotation(Model.class).cached())
+            throw new NotCachedException();
+        return this.filter(modelClass, field, FilterExpression.EQUALS, value, this.readAllFromCache(modelClass).stream());
+    }
+
+    @Override
+    public void updateWholeCache(Object object, Class<?> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
+        if (!modelClass.getAnnotation(Model.class).cached())
+            throw new NotCachedException();
+        for (Object o : this.cachedObjects.keySet()) {
+            if (o.getClass().equals(modelClass))
+                this.cachedObjects.remove(o);
+        }
+        this.fetchAll(modelClass);
+    }
+
+    @Override
+    public <T> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
+        if (!modelClass.getAnnotation(Model.class).cached())
+            throw new NotCachedException();
+        List<T> matchingObjects = this.readMatchingFromCache(modelClass, key, value);
+        for (Object o : this.cachedObjects.keySet()) {
+            if (matchingObjects.contains(o))
+                this.cachedObjects.remove(o);
+        }
+        this.fetchMatching(modelClass, key, value);
     }
 
     @Override

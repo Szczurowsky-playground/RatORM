@@ -12,4 +12,6 @@ public @interface Model {
     String tableName();
 
     boolean autoFetch() default true;
+
+    boolean cached() default false;
 }
