@@ -32,7 +32,6 @@ public class MongoDB implements Database {
 
     private MongoClient client;
     private MongoDatabase database;
-    private final HashMap<Object, Class<?>> objects = new HashMap<>();
     private final HashMap<Class<?>, Class<? extends Serializer>> serializers = new HashMap<>();
     private final HashMap<Class<?>, MongoCollection<Document>> collections = new HashMap<>();
     private boolean connected;
@@ -105,7 +104,7 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public void fetchAll(Class<?> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public <T> List<T> fetchAll(Class<T> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
         if (!modelClass.isAnnotationPresent(Model.class))
@@ -114,11 +113,11 @@ public class MongoDB implements Database {
         MongoCollection<Document> collection = this.collections.get(modelClass);
         if (collection == null)
             throw new ModelNotInitializedException();
-        this.deserialize(modelClass, collection.find());
+        return this.deserialize(modelClass, collection.find());
     }
 
     @Override
-    public <T> void fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public <T> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
         if (!modelClass.isAnnotationPresent(Model.class))
@@ -149,12 +148,13 @@ public class MongoDB implements Database {
         }
         if (!found || serialized == null)
             throw new NoSerializerFoundException();
-        this.deserialize(modelClass, collection.find(new Document(key, serialized)));
+       return this.deserialize(modelClass, collection.find(new Document(key, serialized)));
     }
 
 
 
-    protected <T> void deserialize(Class<T> modelClass, FindIterable<Document> receivedObjects) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
+    protected <T> List<T> deserialize(Class<T> modelClass, FindIterable<Document> receivedObjects) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
+        List<T> deserializedObjects = new LinkedList<>();
         for (Document receivedObject : receivedObjects) {
             boolean toBeFixed = false;
             T initializedClass = modelClass.newInstance();
@@ -195,10 +195,11 @@ public class MongoDB implements Database {
                         throw new NoSerializerFoundException();
                 }
             }
-            this.objects.put(initializedClass, modelClass);
+            deserializedObjects.add(initializedClass);
             if (toBeFixed)
                 this.save(initializedClass, modelClass);
         }
+        return deserializedObjects;
     }
 
     @Override
@@ -243,17 +244,10 @@ public class MongoDB implements Database {
             }
         }
         this.collections.get(modelClass).updateOne(key, new Document("$set", document), new UpdateOptions().upsert( true ));
-        this.objects.put(object, modelClass);
     }
 
     @Override
-    public <T> List<T> readAll(Class<T> modelClass) {
-        return this.objects.keySet().stream().filter(k -> k.getClass().equals(modelClass)).map(k -> (T) k).collect(Collectors.toList());
-    }
-
-    @Override
-    public <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value) {
-        Stream<?> objects = this.objects.keySet().stream();
+    public <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Stream<T> objects) {
         switch (expression) {
             case GREATER_THAN:
                 return objects.filter(o -> {
@@ -328,7 +322,6 @@ public class MongoDB implements Database {
 
     @Override
     public void delete(Object object, Class<?> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
-        this.objects.remove(object);
         if (!connected)
             throw new NotConnectedToDatabaseException();
         Document key = new Document();
@@ -367,7 +360,6 @@ public class MongoDB implements Database {
             }
         }
         this.collections.get(modelClass).deleteOne(key);
-        this.objects.remove(object);
     }
 
     @Override

@@ -7,6 +7,7 @@ import pl.szczurowsky.ratorm.serializers.Serializer;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
     Basic interface of database which would be initiated at the begging.
@@ -52,15 +53,16 @@ public interface Database {
      * @throws InvocationTargetException Java exception when wasn't able to invoke method
      * @throws InstantiationException Java exception when model class wasn't able to create own instance
      * @throws IllegalAccessException Java security exception
+     * @return List of fetched objects
      */
-    void fetchAll(Class<?> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
+    <T> List<T> fetchAll(Class<T> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
 
     /**
      * Fetch all objects which match provided conditions
+     * @param <T> Model class
      * @param modelClass Model class
      * @param key Object key in database (field name)
      * @param value Not serialized value of field
-     * @param <T> Model class
      * @throws ModelAnnotationMissingException Exception when model is not using @Model annotation
      * @throws NotConnectedToDatabaseException Not connected to database
      * @throws ModelNotInitializedException Model wasn't initialized
@@ -68,8 +70,9 @@ public interface Database {
      * @throws InvocationTargetException Java exception when wasn't able to invoke method
      * @throws InstantiationException Java exception when model class wasn't able to create own instance
      * @throws IllegalAccessException Java security exception
+     * @return List of fetched objects
      */
-    <T> void fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
+    <T> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
 
     /**
      * Save object
@@ -84,23 +87,16 @@ public interface Database {
     void save(Object object, Class<?> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException;
 
     /**
-     * Returns all object which match Model
-     * @param modelClass Model to match
-     * @param <T> Model class
-     * @return List of objects
-     */
-    <T> List<T> readAll(Class<T> modelClass);
-
-    /**
      * Returns all object which match
      * @param <T> Model class
      * @param modelClass class of object model
      * @param field matching field
      * @param expression expression from enum
      * @param value matched value to field
+     * @param objects provided stream of objects
      * @return Array of objects which matched expression
      */
-    <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value);
+    <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Stream<T> objects);
 
     /**
      * Deletes object in database which matches provided object
