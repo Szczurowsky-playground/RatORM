@@ -7,9 +7,9 @@
 
 ## Status:
 
-| Branch  |     | Tests                                                                                               | Code Quality |
-|--------|-----|-----------------------------------------------------------------------------------------------------|--------------|
-| master  |     | ![CircleCI](https://img.shields.io/circleci/build/github/Szczurowsky/RatORM/master?style=for-the-badge) | ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Szczurowsky/ratorm/master?style=for-the-badge) |
+| Branch  | Tests                                                                                               | Code Quality |
+|--------|-----------------------------------------------------------------------------------------------------|--------------|
+| master  | ![CircleCI](https://img.shields.io/circleci/build/github/Szczurowsky/RatORM/master?style=for-the-badge) | ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Szczurowsky/ratorm/master?style=for-the-badge) |
 
 ## Usefull links
 Helpful links:
@@ -119,7 +119,7 @@ public class Example {
 
 ```java
 @Model(tableName="example-table")
-public class ExampleModel {
+public class ExampleModel extends BaseModel {
     @ModelField(isPrimaryKey = true)
     int id;
     @ModelField
@@ -168,7 +168,7 @@ public class Example {
         this.database = new MongoDB();
         this.database.connect("URI String");
         this.database.initModel(ExampleModel.class);
-        this.database.fetchMatching(ExampleModel.class, "Key", "Case");
+        this.database.fetchAll(ExampleModel.class);
         // Data being saved to internal cache
         List<ExampleModel> data = this.database.readAll(ExampleModel.class);
     }
@@ -193,8 +193,6 @@ public class Example {
         this.database.connect("URI String");
         this.database.initModel(ExampleModel.class);
         this.database.fetchMatching(ExampleModel.class, "Key", "Case");
-        // Data being saved to internal cache
-        List<ExampleModel> data = this.database.filter(TestModel.class, "case", FilterExpression.EQUALS, "value");
     }
     
 }
