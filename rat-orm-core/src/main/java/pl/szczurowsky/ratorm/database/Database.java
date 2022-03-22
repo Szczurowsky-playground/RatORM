@@ -38,10 +38,10 @@ public interface Database {
 
     /**
      * Initialize table in database. If table not existing in database than creating it. If exists than load
-     * @param modelClass Class od model
+     * @param modelClasses One or multiple class of models
      * @throws ModelAnnotationMissingException Exception when model is not using @Model annotation
      */
-    void initModel(Class<?> modelClass) throws ModelAnnotationMissingException;
+    void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException;
 
     /**
      * Fetch all objects which matches model class

@@ -87,18 +87,20 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public void initModel(Class<?> modelClass) throws ModelAnnotationMissingException {
-        if (!modelClass.isAnnotationPresent(Model.class))
-            throw new ModelAnnotationMissingException();
-        String tableName = modelClass.getAnnotation(Model.class).tableName();
-        if (!this.database.listCollectionNames().into(new ArrayList<>()).contains(tableName))
-            this.database.createCollection(tableName);
-        this.collections.put(modelClass ,this.database.getCollection(tableName));
-        if (modelClass.getAnnotation(Model.class).autoFetch()) {
-            try {
-                this.fetchAll(modelClass);
-            } catch (Exception e) {
-                e.printStackTrace();
+    public void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException {
+        for (Class<?> modelClass : modelClasses) {
+            if (!modelClass.isAnnotationPresent(Model.class))
+                throw new ModelAnnotationMissingException();
+            String tableName = modelClass.getAnnotation(Model.class).tableName();
+            if (!this.database.listCollectionNames().into(new ArrayList<>()).contains(tableName))
+                this.database.createCollection(tableName);
+            this.collections.put(modelClass ,this.database.getCollection(tableName));
+            if (modelClass.getAnnotation(Model.class).autoFetch()) {
+                try {
+                    this.fetchAll(modelClass);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
