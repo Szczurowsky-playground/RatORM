@@ -44,7 +44,7 @@ public interface Database {
      * @throws MoreThanOnePrimaryKeyException Exception when model have more than one field set as primary key
      * @throws NoPrimaryKeyException Exception when model don't have field as primary key
      */
-    void initModel(Class<? extends BaseModel>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
+    <T extends BaseModel> void initModel(Class<T>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
 
     /**
      * Fetch all objects which matches model class

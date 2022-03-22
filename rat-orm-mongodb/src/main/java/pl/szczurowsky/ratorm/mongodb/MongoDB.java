@@ -87,8 +87,8 @@ public class MongoDB implements Database {
 
     @SafeVarargs
     @Override
-    public final void initModel(Class<? extends BaseModel>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
-        for (Class<? extends BaseModel> modelClass : modelClasses) {
+    public final <T extends BaseModel> void initModel(Class<T>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
+        for (Class<T> modelClass : modelClasses) {
             if (!modelClass.isAnnotationPresent(Model.class))
                 throw new ModelAnnotationMissingException();
             int primaryKeys = 0;
