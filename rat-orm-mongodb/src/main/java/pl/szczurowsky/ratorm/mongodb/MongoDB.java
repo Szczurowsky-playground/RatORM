@@ -14,10 +14,7 @@ import pl.szczurowsky.ratorm.annotation.ModelField;
 import pl.szczurowsky.ratorm.database.Database;
 import pl.szczurowsky.ratorm.enums.FilterExpression;
 import pl.szczurowsky.ratorm.exception.*;
-import pl.szczurowsky.ratorm.serializers.BigIntSerializer;
-import pl.szczurowsky.ratorm.serializers.MapSerializer;
-import pl.szczurowsky.ratorm.serializers.Serializer;
-import pl.szczurowsky.ratorm.serializers.UuidSerializer;
+import pl.szczurowsky.ratorm.serializers.*;
 import pl.szczurowsky.ratorm.serializers.basic.*;
 
 import java.lang.reflect.Field;
@@ -167,6 +164,8 @@ public class MongoDB implements Database {
                     Class<? extends Serializer> serializer = this.serializers.get(declaredField.getType());
                     if (Map.class.isAssignableFrom(declaredField.getType()))
                         serializer =  MapSerializer.class;
+                    else if (Collection.class.isAssignableFrom(declaredField.getType()))
+                        serializer = CollectionSerializer.class;
                     if (serializer == null) {
                         throw new NoSerializerFoundException();
                     }
@@ -182,11 +181,13 @@ public class MongoDB implements Database {
                     String methodName = "deserialize";
                     if (Map.class.isAssignableFrom(declaredField.getType()))
                         methodName+="Map";
+                    else if (Collection.class.isAssignableFrom(declaredField.getType()))
+                        methodName+="Collection";
                     for (Method declaredMethod : serializer.getDeclaredMethods()) {
                         if (declaredMethod.getName().equals(methodName)) {
                             found = true;
                             Object deserialized;
-                            if (Map.class.isAssignableFrom(declaredField.getType()))
+                            if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
                                 deserialized = declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
                             else
                                 deserialized = declaredMethod.invoke(serializer.newInstance(), value);
@@ -215,6 +216,8 @@ public class MongoDB implements Database {
                 Class<? extends Serializer> serializer = this.serializers.get(declaredField.getType());
                 if (Map.class.isAssignableFrom(declaredField.getType()))
                     serializer =  MapSerializer.class;
+                else if (Collection.class.isAssignableFrom(declaredField.getType()))
+                    serializer = CollectionSerializer.class;
                 if (serializer == null) {
                     throw new NoSerializerFoundException();
                 }
@@ -224,6 +227,8 @@ public class MongoDB implements Database {
                 String methodName = "serialize";
                 if (Map.class.isAssignableFrom(declaredField.getType()))
                     methodName+="Map";
+                else if (Collection.class.isAssignableFrom(declaredField.getType()))
+                    methodName+="Collection";
                 for (Method declaredMethod : serializer.getDeclaredMethods()) {
                     if (declaredMethod.getName().equals(methodName)) {
                         found = true;
@@ -232,7 +237,7 @@ public class MongoDB implements Database {
                             name = declaredField.getName();
                         }
                         String serialized;
-                        if (Map.class.isAssignableFrom(declaredField.getType()))
+                        if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
                             serialized = (String) declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
                         else
                             serialized = (String) declaredMethod.invoke(serializer.newInstance(), value);

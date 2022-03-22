@@ -1,50 +1,42 @@
 package pl.szczurowsky.ratorm.serializers;
 
-import org.json.JSONObject;
+import org.json.JSONArray;
 import pl.szczurowsky.ratorm.exception.SerializerException;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
 
-public class MapSerializer implements Serializer<Object> {
+public class CollectionSerializer implements Serializer<Object> {
 
-    public <K, V> Map<K, V> deserializeMap(String receivedMap, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws ClassNotFoundException {
-        JSONObject JSONObject = new JSONObject(receivedMap);
-        Map<K, V> map = new HashMap<>();
-        Class<?> keyClass = Class.forName(JSONObject.getString("$#MapKey#$"));
-        Class<?> valueClass = Class.forName(JSONObject.getString("$#MapVar#$"));
-        JSONObject.remove("$#MapKey#$");
-        JSONObject.remove("$#MapVar#$");
-        for (String s : JSONObject.keySet()) {
-            map.put((K) deserializeValue(keyClass, serializers, s), (V) deserializeValue(valueClass, serializers, JSONObject.get(s)));
-        }
-        return map;
-    }
-
-    public <K, V> String serializeMap(Map<K, V> providedObject, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws SerializerException {
+    public <T> String serializeCollection(Collection<T> providedCollection, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws SerializerException {
         try {
-            JSONObject jsonObject = new JSONObject();
-            Class<?> keyClass = null;
+            JSONArray serializedToJsonArray = new JSONArray();
             Class<?> valueClass = null;
-            for (K k : providedObject.keySet()) {
-                V value = providedObject.get(k);
-                if (keyClass == null)
-                    keyClass = k.getClass();
+            for (T t : providedCollection) {
                 if (valueClass == null)
-                    valueClass = value.getClass();
-                jsonObject.put(serializeValue(k.getClass(), serializers, k), serializeValue(value.getClass(), serializers, value));
+                    valueClass = t.getClass();
+                serializedToJsonArray.put(serializeValue(t.getClass(), serializers, t));
             }
-            if (keyClass == null || valueClass == null) {
-                keyClass = Object.class;
+            if (valueClass == null)
                 valueClass = Object.class;
-            }
-            jsonObject.put("$#MapKey#$", String.valueOf(keyClass).replace("class ", ""));
-            jsonObject.put("$#MapVar#$", String.valueOf(valueClass).replace("class ", ""));
-            return jsonObject.toString();
+            serializedToJsonArray.put(String.valueOf(valueClass).replace("class ", ""));
+            return serializedToJsonArray.toString();
         } catch (Exception e) {
             throw new SerializerException(e);
         }
+    }
+    
+    public <T> Collection<T> deserializeCollection(String receivedCollection, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws ClassNotFoundException {
+        JSONArray receivedArray = new JSONArray(receivedCollection);
+        Collection<T> deserializedCollection = new ArrayList<>();
+        Class<?> valueClass = Class.forName((String) receivedArray.get(receivedArray.length() - 1));
+        receivedArray.remove(receivedArray.length() - 1);
+        for (Object o : receivedArray) {
+            deserializedCollection.add((T) deserializeValue(valueClass, serializers, o));
+        }
+        return deserializedCollection;
     }
 
     public <T> Object deserializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) {
