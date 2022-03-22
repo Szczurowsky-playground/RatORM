@@ -40,8 +40,10 @@ public interface Database {
      * Initialize table in database. If table not existing in database than creating it. If exists than load
      * @param modelClasses One or multiple class of models
      * @throws ModelAnnotationMissingException Exception when model is not using @Model annotation
+     * @throws MoreThanOnePrimaryKeyException Exception when model have more than one field set as primary key
+     * @throws NoPrimaryKeyException Exception when model don't have field as primary key
      */
-    void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException;
+    void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
 
     /**
      * Fetch all objects which matches model class

@@ -85,10 +85,20 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException {
+    public void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
         for (Class<?> modelClass : modelClasses) {
             if (!modelClass.isAnnotationPresent(Model.class))
                 throw new ModelAnnotationMissingException();
+            int primaryKeys = 0;
+            for (Field declaredField : modelClass.getDeclaredFields()) {
+                if(declaredField.isAnnotationPresent(ModelField.class))
+                    if (declaredField.getAnnotation(ModelField.class).isPrimaryKey())
+                        primaryKeys++;
+            }
+            if (primaryKeys == 0)
+                throw new NoPrimaryKeyException();
+            else if (primaryKeys != 1)
+                throw new MoreThanOnePrimaryKeyException();
             String tableName = modelClass.getAnnotation(Model.class).tableName();
             if (!this.database.listCollectionNames().into(new ArrayList<>()).contains(tableName))
                 this.database.createCollection(tableName);
