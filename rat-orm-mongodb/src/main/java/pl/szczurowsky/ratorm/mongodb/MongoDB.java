@@ -9,6 +9,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
+import pl.szczurowsky.ratorm.Model.BaseModel;
 import pl.szczurowsky.ratorm.annotation.Model;
 import pl.szczurowsky.ratorm.annotation.ModelField;
 import pl.szczurowsky.ratorm.database.Database;
@@ -30,8 +31,8 @@ public class MongoDB implements Database {
     private MongoClient client;
     private MongoDatabase database;
     private final HashMap<Class<?>, Class<? extends Serializer>> serializers = new HashMap<>();
-    private final HashMap<Object, Class<?>> cachedObjects = new HashMap<>();
-    private final HashMap<Class<?>, MongoCollection<Document>> collections = new HashMap<>();
+    private final HashMap<Object, Class<? extends BaseModel>> cachedObjects = new HashMap<>();
+    private final HashMap<Class<? extends BaseModel>, MongoCollection<Document>> collections = new HashMap<>();
     private boolean connected;
 
     /**
@@ -84,9 +85,10 @@ public class MongoDB implements Database {
         this.serializers.put(serializedObjectClass, serializerClass);
     }
 
+    @SafeVarargs
     @Override
-    public void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
-        for (Class<?> modelClass : modelClasses) {
+    public final void initModel(Class<? extends BaseModel>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
+        for (Class<? extends BaseModel> modelClass : modelClasses) {
             if (!modelClass.isAnnotationPresent(Model.class))
                 throw new ModelAnnotationMissingException();
             int primaryKeys = 0;
@@ -114,7 +116,7 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public <T> List<T> fetchAll(Class<T> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public <T extends BaseModel> List<T> fetchAll(Class<T> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
         if (!modelClass.isAnnotationPresent(Model.class))
@@ -127,7 +129,7 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public <T> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public <T extends BaseModel> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
         if (!modelClass.isAnnotationPresent(Model.class))
@@ -163,7 +165,7 @@ public class MongoDB implements Database {
 
 
 
-    protected <T> List<T> deserialize(Class<T> modelClass, FindIterable<Document> receivedObjects) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
+    protected <T extends BaseModel> List<T> deserialize(Class<T> modelClass, FindIterable<Document> receivedObjects) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
         List<T> deserializedObjects = new LinkedList<>();
         for (Document receivedObject : receivedObjects) {
             boolean toBeFixed = false;
@@ -219,11 +221,12 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public void save(Object object, Class<?> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
+    public <T extends BaseModel> void save(T object, Class<T> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
         Document document = new Document();
         Document key = new Document();
+        object.lockWrite();
         for (Field declaredField : modelClass.getDeclaredFields()) {
             if (declaredField.isAnnotationPresent(ModelField.class)) {
                 Class<? extends Serializer> serializer = this.serializers.get(declaredField.getType());
@@ -266,10 +269,11 @@ public class MongoDB implements Database {
         this.collections.get(modelClass).updateOne(key, new Document("$set", document), new UpdateOptions().upsert( true ));
         if (modelClass.getAnnotation(Model.class).cached())
             this.cachedObjects.put(object, modelClass);
+        object.unlockWrite();
     }
 
     @Override
-    public <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Stream<T> objects) {
+    public <T extends BaseModel> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Stream<T> objects) {
         switch (expression) {
             case GREATER_THAN:
                 return objects.filter(o -> {
@@ -343,9 +347,10 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public void delete(Object object, Class<?> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    public <T extends BaseModel> void delete(T object, Class<T> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
+        object.lockWrite();
         if (modelClass.getAnnotation(Model.class).cached())
             this.cachedObjects.remove(object);
         Document key = new Document();
@@ -384,24 +389,25 @@ public class MongoDB implements Database {
             }
         }
         this.collections.get(modelClass).deleteOne(key);
+        object.unlockWrite();
     }
 
     @Override
-    public <T> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException {
+    public <T extends BaseModel> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException {
         if (!modelClass.getAnnotation(Model.class).cached())
             throw new NotCachedException();
         return this.cachedObjects.keySet().stream().filter(k -> k.getClass().equals(modelClass)).map(k -> (T) k).collect(Collectors.toList());
     }
 
     @Override
-    public <T> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException {
+    public <T extends BaseModel> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException {
         if (!modelClass.getAnnotation(Model.class).cached())
             throw new NotCachedException();
         return this.filter(modelClass, field, FilterExpression.EQUALS, value, this.readAllFromCache(modelClass).stream());
     }
 
     @Override
-    public void updateWholeCache(Object object, Class<?> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
+    public void updateWholeCache(Object object, Class<? extends BaseModel> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
         if (!modelClass.getAnnotation(Model.class).cached())
             throw new NotCachedException();
         for (Object o : this.cachedObjects.keySet()) {
@@ -412,7 +418,7 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public <T> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
+    public <T extends BaseModel> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
         if (!modelClass.getAnnotation(Model.class).cached())
             throw new NotCachedException();
         List<T> matchingObjects = this.readMatchingFromCache(modelClass, key, value);

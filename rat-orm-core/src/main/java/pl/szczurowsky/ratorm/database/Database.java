@@ -1,5 +1,6 @@
 package pl.szczurowsky.ratorm.database;
 
+import pl.szczurowsky.ratorm.Model.BaseModel;
 import pl.szczurowsky.ratorm.enums.FilterExpression;
 import pl.szczurowsky.ratorm.exception.*;
 import pl.szczurowsky.ratorm.serializers.Serializer;
@@ -43,10 +44,11 @@ public interface Database {
      * @throws MoreThanOnePrimaryKeyException Exception when model have more than one field set as primary key
      * @throws NoPrimaryKeyException Exception when model don't have field as primary key
      */
-    void initModel(Class<?>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
+    void initModel(Class<? extends BaseModel>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
 
     /**
      * Fetch all objects which matches model class
+     * @param <T> Model class
      * @param modelClass Model class
      * @throws ModelAnnotationMissingException Exception when model is not using @Model annotation
      * @throws NotConnectedToDatabaseException Not connected to database
@@ -57,7 +59,7 @@ public interface Database {
      * @throws IllegalAccessException Java security exception
      * @return List of fetched objects
      */
-    <T> List<T> fetchAll(Class<T> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
+    <T extends BaseModel> List<T> fetchAll(Class<T> modelClass) throws ModelAnnotationMissingException, NotConnectedToDatabaseException, ModelNotInitializedException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
 
     /**
      * Fetch all objects which match provided conditions
@@ -74,10 +76,11 @@ public interface Database {
      * @throws IllegalAccessException Java security exception
      * @return List of fetched objects
      */
-    <T> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
+    <T extends BaseModel> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
 
     /**
      * Save object
+     * @param <T> Model class
      * @param object object
      * @param modelClass class of object model
      * @throws NoSerializerFoundException Serializer for field model wasn't found
@@ -86,7 +89,7 @@ public interface Database {
      * @throws InvocationTargetException Java exception when wasn't able to invoke method
      * @throws NotConnectedToDatabaseException Not connected to database
      */
-    void save(Object object, Class<?> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException;
+    <T extends BaseModel> void save(T object, Class<T> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException;
 
     /**
      * Returns all object which match
@@ -98,10 +101,11 @@ public interface Database {
      * @param objects provided stream of objects
      * @return Array of objects which matched expression
      */
-    <T> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Stream<T> objects);
+    <T extends BaseModel> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Stream<T> objects);
 
     /**
      * Deletes object in database which matches provided object
+     * @param <T> Model class
      * @param modelClass Model class
      * @param object object
      * @throws NotConnectedToDatabaseException Not connected to database
@@ -110,7 +114,7 @@ public interface Database {
      * @throws IllegalAccessException Java security exception
      * @throws InvocationTargetException Java exception when wasn't able to invoke method
      */
-    void delete(Object object, Class<?> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException;
+    <T extends BaseModel> void delete(T object, Class<T> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException;
 
     /**
      * Read all objects from cache
@@ -119,7 +123,7 @@ public interface Database {
      * @return List of models
      * @throws NotCachedException Exception when user tries to read object from cache which don't have cache enabled
      */
-    <T> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException;
+    <T extends BaseModel> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException;
 
     /**
      * Read objects which match condition
@@ -130,7 +134,7 @@ public interface Database {
      * @return List of models
      * @throws NotCachedException Exception when user tries to read object from cache which don't have cache enabled
      */
-    <T> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException;
+    <T extends BaseModel> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException;
 
     /**
      * Refresh whole cache - purging cache and replace it with object from database
@@ -145,7 +149,7 @@ public interface Database {
      * @throws InstantiationException Java exception when model class wasn't able to create own instance
      * @throws IllegalAccessException Java security exception
      */
-    void updateWholeCache(Object object, Class<?> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException;
+    void updateWholeCache(Object object, Class<? extends BaseModel> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException;
 
     /**
      *
@@ -162,7 +166,7 @@ public interface Database {
      * @throws InstantiationException Java exception when model class wasn't able to create own instance
      * @throws IllegalAccessException Java security exception
      */
-    <T> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException;
+    <T extends BaseModel> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException;
 
     /**
      * Checks is connection to database valid
