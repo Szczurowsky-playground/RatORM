@@ -56,6 +56,7 @@ public class MongoDB implements Database {
         this.serializers.put(Short.class, ShortSerializer.class);
         this.serializers.put(short.class, ShortSerializer.class);
         this.serializers.put(UUID.class, UuidSerializer.class);
+        this.serializers.put(Enum.class, EnumSerializer.class);
     }
 
     @Override
@@ -85,9 +86,8 @@ public class MongoDB implements Database {
         this.serializers.put(serializedObjectClass, serializerClass);
     }
 
-    @SafeVarargs
     @Override
-    public final <T extends BaseModel> void initModel(Class<T>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
+    public final <T extends BaseModel> void initModel(Collection<Class<T>> modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
         for (Class<T> modelClass : modelClasses) {
             if (!modelClass.isAnnotationPresent(Model.class))
                 throw new ModelAnnotationMissingException();
@@ -163,7 +163,50 @@ public class MongoDB implements Database {
        return this.deserialize(modelClass, collection.find(new Document(key, serialized)));
     }
 
-
+    protected <T extends BaseModel> Document serialize(Class<T> modelClass, T object) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        Document document = new Document();
+        Document key = new Document();
+        for (Field declaredField : modelClass.getDeclaredFields()) {
+            if (declaredField.isAnnotationPresent(ModelField.class)) {
+                Class<? extends Serializer> serializer = this.serializers.get(declaredField.getType());
+                if (Map.class.isAssignableFrom(declaredField.getType()))
+                    serializer =  MapSerializer.class;
+                else if (Collection.class.isAssignableFrom(declaredField.getType()))
+                    serializer = CollectionSerializer.class;
+                if (serializer == null) {
+                    throw new NoSerializerFoundException();
+                }
+                declaredField.setAccessible(true);
+                Object value = declaredField.get(object);
+                boolean found = false;
+                String methodName = "serialize";
+                if (Map.class.isAssignableFrom(declaredField.getType()))
+                    methodName+="Map";
+                else if (Collection.class.isAssignableFrom(declaredField.getType()))
+                    methodName+="Collection";
+                for (Method declaredMethod : serializer.getDeclaredMethods()) {
+                    if (declaredMethod.getName().equals(methodName)) {
+                        found = true;
+                        String name = declaredField.getAnnotation(ModelField.class).name();
+                        if (name.equals("")) {
+                            name = declaredField.getName();
+                        }
+                        String serialized;
+                        if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
+                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
+                        else
+                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value);
+                        document.put(name, serialized);
+                        if (declaredField.getAnnotation(ModelField.class).isPrimaryKey())
+                            key.put(name, serialized);
+                    }
+                }
+                if (!found)
+                    throw new NoSerializerFoundException();
+            }
+        }
+        return new Document("key", key).append("value", document);
+    }
 
     protected <T extends BaseModel> List<T> deserialize(Class<T> modelClass, FindIterable<Document> receivedObjects) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
         List<T> deserializedObjects = new LinkedList<>();
@@ -224,48 +267,10 @@ public class MongoDB implements Database {
     public <T extends BaseModel> void save(T object, Class<T> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
-        Document document = new Document();
-        Document key = new Document();
+        Document serializedObject = serialize(modelClass, object);
+        Document document = serializedObject.get("value", Document.class);
+        Document key = serializedObject.get("key", Document.class);
         object.lockWrite();
-        for (Field declaredField : modelClass.getDeclaredFields()) {
-            if (declaredField.isAnnotationPresent(ModelField.class)) {
-                Class<? extends Serializer> serializer = this.serializers.get(declaredField.getType());
-                if (Map.class.isAssignableFrom(declaredField.getType()))
-                    serializer =  MapSerializer.class;
-                else if (Collection.class.isAssignableFrom(declaredField.getType()))
-                    serializer = CollectionSerializer.class;
-                if (serializer == null) {
-                    throw new NoSerializerFoundException();
-                }
-                declaredField.setAccessible(true);
-                Object value = declaredField.get(object);
-                boolean found = false;
-                String methodName = "serialize";
-                if (Map.class.isAssignableFrom(declaredField.getType()))
-                    methodName+="Map";
-                else if (Collection.class.isAssignableFrom(declaredField.getType()))
-                    methodName+="Collection";
-                for (Method declaredMethod : serializer.getDeclaredMethods()) {
-                    if (declaredMethod.getName().equals(methodName)) {
-                        found = true;
-                        String name = declaredField.getAnnotation(ModelField.class).name();
-                        if (name.equals("")) {
-                            name = declaredField.getName();
-                        }
-                        String serialized;
-                        if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
-                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
-                        else
-                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value);
-                        document.put(name, serialized);
-                        if (declaredField.getAnnotation(ModelField.class).isPrimaryKey())
-                            key.put(name, serialized);
-                    }
-                }
-                if (!found)
-                    throw new NoSerializerFoundException();
-            }
-        }
         this.collections.get(modelClass).updateOne(key, new Document("$set", document), new UpdateOptions().upsert( true ));
         if (modelClass.getAnnotation(Model.class).cached())
             this.cachedObjects.put(object, modelClass);
@@ -353,41 +358,7 @@ public class MongoDB implements Database {
         object.lockWrite();
         if (modelClass.getAnnotation(Model.class).cached())
             this.cachedObjects.remove(object);
-        Document key = new Document();
-        for (Field declaredField : modelClass.getDeclaredFields()) {
-            if (declaredField.isAnnotationPresent(ModelField.class)) {
-                Class<? extends Serializer> serializer = this.serializers.get(declaredField.getType());
-                if (Map.class.isAssignableFrom(declaredField.getType()))
-                    serializer =  MapSerializer.class;
-                if (serializer == null) {
-                    throw new NoSerializerFoundException();
-                }
-                declaredField.setAccessible(true);
-                Object value = declaredField.get(object);
-                boolean found = false;
-                String methodName = "serialize";
-                if (Map.class.isAssignableFrom(declaredField.getType()))
-                    methodName+="Map";
-                for (Method declaredMethod : serializer.getDeclaredMethods()) {
-                    if (declaredMethod.getName().equals(methodName)) {
-                        found = true;
-                        String name = declaredField.getAnnotation(ModelField.class).name();
-                        if (name.equals("")) {
-                            name = declaredField.getName();
-                        }
-                        String serialized;
-                        if (Map.class.isAssignableFrom(declaredField.getType()))
-                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
-                        else
-                            serialized = (String) declaredMethod.invoke(serializer.newInstance(), value);
-                        if (declaredField.getAnnotation(ModelField.class).isPrimaryKey())
-                            key.put(name, serialized);
-                    }
-                }
-                if (!found)
-                    throw new NoSerializerFoundException();
-            }
-        }
+        Document key = serialize(modelClass, object).get("key", Document.class);
         this.collections.get(modelClass).deleteOne(key);
         object.unlockWrite();
     }

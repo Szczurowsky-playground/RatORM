@@ -6,6 +6,7 @@ import pl.szczurowsky.ratorm.exception.*;
 import pl.szczurowsky.ratorm.serializers.Serializer;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -44,7 +45,7 @@ public interface Database {
      * @throws MoreThanOnePrimaryKeyException Exception when model have more than one field set as primary key
      * @throws NoPrimaryKeyException Exception when model don't have field as primary key
      */
-    <T extends BaseModel> void initModel(Class<T>... modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
+    <T extends BaseModel> void initModel(Collection<Class<T>> modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
 
     /**
      * Fetch all objects which matches model class

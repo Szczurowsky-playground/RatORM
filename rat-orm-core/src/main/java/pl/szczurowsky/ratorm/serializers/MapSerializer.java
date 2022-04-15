@@ -1,6 +1,7 @@
 package pl.szczurowsky.ratorm.serializers;
 
 import org.json.JSONObject;
+import pl.szczurowsky.ratorm.exception.NoSerializerFoundException;
 import pl.szczurowsky.ratorm.exception.SerializerException;
 
 import java.lang.reflect.Method;
@@ -9,17 +10,22 @@ import java.util.Map;
 
 public class MapSerializer implements Serializer<Object> {
 
-    public <K, V> Map<K, V> deserializeMap(String receivedMap, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws ClassNotFoundException {
-        JSONObject JSONObject = new JSONObject(receivedMap);
-        Map<K, V> map = new HashMap<>();
-        Class<?> keyClass = Class.forName(JSONObject.getString("$#MapKey#$"));
-        Class<?> valueClass = Class.forName(JSONObject.getString("$#MapVar#$"));
-        JSONObject.remove("$#MapKey#$");
-        JSONObject.remove("$#MapVar#$");
-        for (String s : JSONObject.keySet()) {
-            map.put((K) deserializeValue(keyClass, serializers, s), (V) deserializeValue(valueClass, serializers, JSONObject.get(s)));
+    public <K, V> Map<K, V> deserializeMap(String receivedMap, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws SerializerException {
+        try {
+            JSONObject JSONObject = new JSONObject(receivedMap);
+            Map<K, V> map = new HashMap<>();
+            Class<?> keyClass = Class.forName(JSONObject.getString("$#MapKey#$"));
+            Class<?> valueClass = Class.forName(JSONObject.getString("$#MapVar#$"));
+            JSONObject.remove("$#MapKey#$");
+            JSONObject.remove("$#MapVar#$");
+            for (String s : JSONObject.keySet()) {
+                map.put((K) deserializeValue(keyClass, serializers, s), (V) deserializeValue(valueClass, serializers, JSONObject.get(s)));
+            }
+            return map;
         }
-        return map;
+        catch (Exception e) {
+            throw new SerializerException(e);
+        }
     }
 
     public <K, V> String serializeMap(Map<K, V> providedObject, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws SerializerException {
@@ -47,9 +53,11 @@ public class MapSerializer implements Serializer<Object> {
         }
     }
 
-    public <T> Object deserializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) {
+    public <T> Object deserializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) throws NoSerializerFoundException {
         try {
             Class<? extends Serializer> serializer = serializers.get(modelClass);
+            if (serializer == null)
+                serializer = serializers.get(modelClass.getSuperclass());
             if (serializer != null) {
                 for (Method declaredMethod : serializer.getDeclaredMethods()) {
                     if (declaredMethod.getName().equals("deserialize")) {
@@ -58,15 +66,16 @@ public class MapSerializer implements Serializer<Object> {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            return "CantDeserialize";
+            throw new NoSerializerFoundException();
         }
-        return "CantDeserialize";
+        throw new NoSerializerFoundException();
     }
 
-    public <T> String serializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) {
+    public <T> String serializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) throws NoSerializerFoundException {
         try {
             Class<? extends Serializer> serializer = serializers.get(modelClass);
+            if (serializer == null)
+                serializer = serializers.get(modelClass.getSuperclass());
             if (serializer != null) {
                 for (Method declaredMethod : serializer.getDeclaredMethods()) {
                     if (declaredMethod.getName().equals("serialize")) {
@@ -75,10 +84,9 @@ public class MapSerializer implements Serializer<Object> {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            return "CantSerialize";
+            throw new NoSerializerFoundException();
         }
-        return "CantSerialize";
+        throw new NoSerializerFoundException();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package pl.szczurowsky.ratorm.serializers;
 
 import org.json.JSONArray;
+import pl.szczurowsky.ratorm.exception.NoSerializerFoundException;
 import pl.szczurowsky.ratorm.exception.SerializerException;
 
 import java.lang.reflect.Method;
@@ -28,20 +29,27 @@ public class CollectionSerializer implements Serializer<Object> {
         }
     }
     
-    public <T> Collection<T> deserializeCollection(String receivedCollection, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws ClassNotFoundException {
-        JSONArray receivedArray = new JSONArray(receivedCollection);
-        Collection<T> deserializedCollection = new ArrayList<>();
-        Class<?> valueClass = Class.forName((String) receivedArray.get(receivedArray.length() - 1));
-        receivedArray.remove(receivedArray.length() - 1);
-        for (Object o : receivedArray) {
-            deserializedCollection.add((T) deserializeValue(valueClass, serializers, o));
+    public <T> Collection<T> deserializeCollection(String receivedCollection, HashMap<Class<?>, Class<? extends Serializer>> serializers) throws SerializerException {
+        try {
+            JSONArray receivedArray = new JSONArray(receivedCollection);
+            Collection<T> deserializedCollection = new ArrayList<>();
+            Class<?> valueClass = Class.forName((String) receivedArray.get(receivedArray.length() - 1));
+            receivedArray.remove(receivedArray.length() - 1);
+            for (Object o : receivedArray) {
+                deserializedCollection.add((T) deserializeValue(valueClass, serializers, o));
+            }
+            return deserializedCollection;
         }
-        return deserializedCollection;
+        catch (Exception e) {
+            throw new SerializerException(e);
+        }
     }
 
-    public <T> Object deserializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) {
+    public <T> Object deserializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) throws NoSerializerFoundException {
         try {
             Class<? extends Serializer> serializer = serializers.get(modelClass);
+            if (serializer == null)
+                serializer = serializers.get(modelClass.getSuperclass());
             if (serializer != null) {
                 for (Method declaredMethod : serializer.getDeclaredMethods()) {
                     if (declaredMethod.getName().equals("deserialize")) {
@@ -50,15 +58,16 @@ public class CollectionSerializer implements Serializer<Object> {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            return "CantDeserialize";
+            throw new NoSerializerFoundException();
         }
-        return "CantDeserialize";
+        throw new NoSerializerFoundException();
     }
 
-    public <T> String serializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) {
+    public <T> String serializeValue(Class<T> modelClass, HashMap<Class<?>, Class<? extends Serializer>> serializers, Object object) throws NoSerializerFoundException {
         try {
             Class<? extends Serializer> serializer = serializers.get(modelClass);
+            if (serializer == null)
+                serializer = serializers.get(modelClass.getSuperclass());
             if (serializer != null) {
                 for (Method declaredMethod : serializer.getDeclaredMethods()) {
                     if (declaredMethod.getName().equals("serialize")) {
@@ -67,10 +76,9 @@ public class CollectionSerializer implements Serializer<Object> {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            return "CantSerialize";
+            throw new NoSerializerFoundException();
         }
-        return "CantSerialize";
+        throw new NoSerializerFoundException();
     }
 
     @Override

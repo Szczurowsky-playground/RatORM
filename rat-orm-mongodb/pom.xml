@@ -5,7 +5,7 @@
     <parent>
         <artifactId>rat-orm</artifactId>
         <groupId>pl.szczurowsky</groupId>
-        <version>1.3</version>
+        <version>1.4.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -27,7 +27,7 @@
         <dependency>
             <groupId>pl.szczurowsky</groupId>
             <artifactId>rat-orm-core</artifactId>
-            <version>1.3</version>
+            <version>1.4.0</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
