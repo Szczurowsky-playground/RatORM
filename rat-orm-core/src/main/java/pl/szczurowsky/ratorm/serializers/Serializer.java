@@ -21,5 +21,5 @@ public interface Serializer<T> {
      * @param receivedObject Serialized object
      * @return Deserialized object
      */
-    T deserialize(String receivedObject);
+    T deserialize(String receivedObject) throws ClassNotFoundException;
 }

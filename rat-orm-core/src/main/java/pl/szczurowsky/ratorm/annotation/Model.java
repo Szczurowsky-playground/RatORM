@@ -10,8 +10,4 @@ import java.lang.annotation.Target;
 public @interface Model {
 
     String tableName();
-
-    boolean autoFetch() default true;
-
-    boolean cached() default false;
 }
