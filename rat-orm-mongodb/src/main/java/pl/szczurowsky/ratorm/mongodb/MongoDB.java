@@ -11,64 +11,41 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.WriteModel;
-import operation.OperationManager;
 import org.bson.Document;
 import pl.szczurowsky.ratorm.Model.BaseModel;
 import pl.szczurowsky.ratorm.annotation.Model;
 import pl.szczurowsky.ratorm.annotation.ModelField;
-import pl.szczurowsky.ratorm.database.Database;
-import pl.szczurowsky.ratorm.enums.FilterExpression;
+import pl.szczurowsky.ratorm.database.BasicDatabase;
 import pl.szczurowsky.ratorm.exception.*;
-import pl.szczurowsky.ratorm.serializers.*;
-import pl.szczurowsky.ratorm.serializers.basic.*;
+import pl.szczurowsky.ratorm.serializers.CollectionSerializer;
+import pl.szczurowsky.ratorm.serializers.MapSerializer;
+import pl.szczurowsky.ratorm.serializers.Serializer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class MongoDB implements Database {
-
-    private MongoClient client;
-    private MongoDatabase database;
-    private final HashMap<Class<?>, Class<? extends Serializer>> serializers = new HashMap<>();
-    private final HashMap<Object, Class<? extends BaseModel>> cachedObjects = new HashMap<>();
-    private final HashMap<Class<? extends BaseModel>, MongoCollection<Document>> collections = new HashMap<>();
-    private final OperationManager operationManager = new OperationManager();
-    private boolean connected;
+public class MongoDB extends BasicDatabase {
 
     /**
-     * Register default serializers
+     * MongoDB client
      */
-    public MongoDB() {
-        this.serializers.put(String.class, StringSerializer.class);
-        this.serializers.put(Character.class, CharacterSerializer.class);
-        this.serializers.put(char.class, CharacterSerializer.class);
-        this.serializers.put(Integer.class, IntegerSerializer.class);
-        this.serializers.put(int.class, IntegerSerializer.class);
-        this.serializers.put(Long.class, LongSerializer.class);
-        this.serializers.put(long.class, LongSerializer.class);
-        this.serializers.put(BigInteger.class, BigIntSerializer.class);
-        this.serializers.put(Float.class, FloatSerializer.class);
-        this.serializers.put(float.class, FloatSerializer.class);
-        this.serializers.put(Boolean.class, BooleanSerializer.class);
-        this.serializers.put(boolean.class, BooleanSerializer.class);
-        this.serializers.put(Double.class, DoubleSerializer.class);
-        this.serializers.put(double.class, DoubleSerializer.class);
-        this.serializers.put(Short.class, ShortSerializer.class);
-        this.serializers.put(short.class, ShortSerializer.class);
-        this.serializers.put(UUID.class, UuidSerializer.class);
-        this.serializers.put(Enum.class, EnumSerializer.class);
-    }
+    private MongoClient client;
+    /**
+     * MongoDB database
+     */
+    private MongoDatabase database;
+    /**
+     * List of initialized models
+     */
+    private final HashMap<Class<? extends BaseModel>, MongoCollection<Document>> collections = new HashMap<>();
 
-    @Override
-    public OperationManager getOperationManager() {
-        return operationManager;
-    }
 
+    /**
+     * Get client session
+     * @return Client session
+     */
     public ClientSession getClientSession() {
         return client.startSession();
     }
@@ -95,11 +72,6 @@ public class MongoDB implements Database {
         this.client = new MongoClient(new ServerAddress(credentials.get("host"), Integer.parseInt(credentials.get("port"))), Collections.singletonList(credential));
         this.database =  this.client.getDatabase(credentials.get("name"));
         this.connected = true;
-    }
-
-    @Override
-    public void registerSerializer(Class<?> serializedObjectClass, Class<? extends Serializer> serializerClass) {
-        this.serializers.put(serializedObjectClass, serializerClass);
     }
 
     @Override
@@ -344,80 +316,6 @@ public class MongoDB implements Database {
     }
 
     @Override
-    public <T extends BaseModel> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Stream<T> objects) {
-        switch (expression) {
-            case GREATER_THAN:
-                return objects.filter(o -> {
-                    try {
-                        Field _field = o.getClass().getDeclaredField(field);
-                        _field.setAccessible(true);
-                        return Long.parseLong(_field.get(o).toString()) > Long.parseLong(value.toString());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }).map(k -> (T) k).collect(Collectors.toList());
-            case LESS_THAN:
-                return objects.filter(o -> {
-                    try {
-                        Field _field = o.getClass().getDeclaredField(field);
-                        _field.setAccessible(true);
-                        return Long.parseLong(_field.get(o).toString()) < Long.parseLong(value.toString());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }).map(k -> (T) k).collect(Collectors.toList());
-            case EQUALS:
-                return objects.filter(o -> {
-                    try {
-                        Field _field = o.getClass().getDeclaredField(field);
-                        _field.setAccessible(true);
-                        return _field.get(o).equals(value);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }).map(k -> (T) k).collect(Collectors.toList());
-            case NOT_EQUALS:
-                return objects.filter(o -> {
-                    try {
-                        Field _field = o.getClass().getDeclaredField(field);
-                        _field.setAccessible(true);
-                        return !_field.get(o).equals(value);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }).map(k -> (T) k).collect(Collectors.toList());
-            case GREATER_THAN_EQUALS:
-                return objects.filter(o -> {
-                    try {
-                        Field _field = o.getClass().getDeclaredField(field);
-                        _field.setAccessible(true);
-                        return Long.parseLong(_field.get(o).toString()) >= Long.parseLong(value.toString());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }).map(k -> (T) k).collect(Collectors.toList());
-            case LESS_THAN_EQUALS:
-                return objects.filter(o -> {
-                    try {
-                        Field _field = o.getClass().getDeclaredField(field);
-                        _field.setAccessible(true);
-                        return Long.parseLong(_field.get(o).toString()) <= Long.parseLong(value.toString());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }).map(k -> (T) k).collect(Collectors.toList());
-            default:
-                return new LinkedList<>();
-        }
-    }
-
-    @Override
     public <T extends BaseModel> void delete(T object, Class<T> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
@@ -427,43 +325,6 @@ public class MongoDB implements Database {
         Document key = serialize(modelClass, object).get("key", Document.class);
         this.collections.get(modelClass).deleteOne(key);
         object.unlockWrite();
-    }
-
-    @Override
-    public <T extends BaseModel> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        return this.cachedObjects.keySet().stream().filter(k -> k.getClass().equals(modelClass)).map(k -> (T) k).collect(Collectors.toList());
-    }
-
-    @Override
-    public <T extends BaseModel> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        return this.filter(modelClass, field, FilterExpression.EQUALS, value, this.readAllFromCache(modelClass).stream());
-    }
-
-    @Override
-    public void updateWholeCache(Object object, Class<? extends BaseModel> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        for (Object o : this.cachedObjects.keySet()) {
-            if (o.getClass().equals(modelClass))
-                this.cachedObjects.remove(o);
-        }
-        this.fetchAll(modelClass);
-    }
-
-    @Override
-    public <T extends BaseModel> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        List<T> matchingObjects = this.readMatchingFromCache(modelClass, key, value);
-        for (Object o : this.cachedObjects.keySet()) {
-            if (matchingObjects.contains(o))
-                this.cachedObjects.remove(o);
-        }
-        this.fetchMatching(modelClass, key, value);
     }
 
     @Override
