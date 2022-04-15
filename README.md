@@ -41,11 +41,11 @@ Framework Core
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-core</artifactId>
-    <version>1.1</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 ```groovy
-implementation 'pl.szczurowsky:rat-orm-core:1.0'
+implementation 'pl.szczurowsky:rat-orm-core:1.4.0'
 ```
 
 Database
@@ -54,11 +54,11 @@ Database
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-type</artifactId>
-    <version>1.1</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 ```groovy
-implementation 'pl.szczurowsky:rat-orm-type:1.0'
+implementation 'pl.szczurowsky:rat-orm-type:1.4.0'
 ```
 
 ## Usage
@@ -144,7 +144,9 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(ExampleModel.class);
+        this.database.initModel(Arrays.asList(
+                ExampleModel.class
+        ));
     }
     
 }
@@ -167,10 +169,10 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(ExampleModel.class);
+        this.database.initModel(Arrays.asList(
+                ExampleModel.class
+        ));
         this.database.fetchAll(ExampleModel.class);
-        // Data being saved to internal cache
-        List<ExampleModel> data = this.database.readAll(ExampleModel.class);
     }
     
 }
@@ -191,8 +193,10 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(ExampleModel.class);
-        this.database.fetchMatching(ExampleModel.class, "Key", "Case");
+        this.database.initModel(Arrays.asList(
+                ExampleModel.class
+        ));
+        this.database.fetchMatching(ExampleModel.class, "Key", "Value");
     }
     
 }
@@ -215,7 +219,9 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(ExampleModel.class);
+        this.database.initModel(Arrays.asList(
+                ExampleModel.class
+        ));
         ExampleModel exampleModel = new ExampleModel();
         this.database.save(exampleModel, ExampleModel.class);
     }
