@@ -4,10 +4,14 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.WriteModel;
+import operation.OperationManager;
 import org.bson.Document;
 import pl.szczurowsky.ratorm.Model.BaseModel;
 import pl.szczurowsky.ratorm.annotation.Model;
@@ -33,6 +37,7 @@ public class MongoDB implements Database {
     private final HashMap<Class<?>, Class<? extends Serializer>> serializers = new HashMap<>();
     private final HashMap<Object, Class<? extends BaseModel>> cachedObjects = new HashMap<>();
     private final HashMap<Class<? extends BaseModel>, MongoCollection<Document>> collections = new HashMap<>();
+    private final OperationManager operationManager = new OperationManager();
     private boolean connected;
 
     /**
@@ -60,10 +65,21 @@ public class MongoDB implements Database {
     }
 
     @Override
+    public OperationManager getOperationManager() {
+        return operationManager;
+    }
+
+    public ClientSession getClientSession() {
+        return client.startSession();
+    }
+
+    @Override
     public void connect(String uri) throws AlreadyConnectedException {
         if (connected)
             throw new AlreadyConnectedException();
-        this.client = new MongoClient(new MongoClientURI(uri));
+        MongoClientURI mongoClientURI = new MongoClientURI(uri);
+        this.client = new MongoClient(mongoClientURI);
+        this.database = this.client.getDatabase(Objects.requireNonNull(mongoClientURI.getDatabase()));
         this.connected = true;
     }
 
@@ -264,17 +280,67 @@ public class MongoDB implements Database {
     }
 
     @Override
+    public <T extends BaseModel> void saveMany(Collection<T> objects, Class<T> modelClass) throws NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NotConnectedToDatabaseException {
+        this.saveManyToDatabase(objects, modelClass, new HashMap<>());
+    }
+
+    @Override
+    public <T extends BaseModel> void saveMany(Collection<T> objects, Class<T> modelClass, Map<String, Object> options) throws NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NotConnectedToDatabaseException {
+        this.saveManyToDatabase(objects, modelClass, options);
+    }
+
+    protected <T extends BaseModel> void saveManyToDatabase(Collection<T> objects, Class<T> modelClass, Map<String, Object> options) throws NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NotConnectedToDatabaseException {
+        if (!connected)
+            throw new NotConnectedToDatabaseException();
+        List<WriteModel<Document>> writes = new ArrayList<>();
+        for (T object : objects) {
+            Document serializedObject = serialize(modelClass, object);
+            Document document = serializedObject.get("value", Document.class);
+            Document key = serializedObject.get("key", Document.class);
+            writes.add(
+                    new UpdateOneModel<Document>(
+                            key, new Document("$set", document), new UpdateOptions().upsert( true )
+                    )
+            );
+            object.lockWrite();
+        }
+        if (options.containsKey("MongoDB.session"))
+            this.collections.get(modelClass).bulkWrite((ClientSession) options.get("MongoDB.session"), writes);
+        else
+            this.collections.get(modelClass).bulkWrite(writes);
+        for (T object : objects) {
+            object.unlockWrite();
+            if (modelClass.getAnnotation(Model.class).cached())
+                this.cachedObjects.put(object, modelClass);
+        }
+
+    }
+
+    @Override
     public <T extends BaseModel> void save(T object, Class<T> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
+        this.saveToDatabase(object, modelClass, new HashMap<>());
+    }
+
+    @Override
+    public <T extends BaseModel> void save(T object, Class<T> modelClass, Map<String, Object> options) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
+        this.saveToDatabase(object, modelClass, options);
+    }
+
+    protected <T extends BaseModel> void saveToDatabase(T object, Class<T> modelClass, Map<String, Object> options) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException {
         if (!connected)
             throw new NotConnectedToDatabaseException();
         Document serializedObject = serialize(modelClass, object);
         Document document = serializedObject.get("value", Document.class);
         Document key = serializedObject.get("key", Document.class);
         object.lockWrite();
-        this.collections.get(modelClass).updateOne(key, new Document("$set", document), new UpdateOptions().upsert( true ));
+        if (options.containsKey("MongoDB.session"))
+            this.collections.get(modelClass).updateOne((ClientSession) options.get("MongoDB.session"),key, new Document("$set", document), new UpdateOptions().upsert( true ));
+        else
+            this.collections.get(modelClass).updateOne(key, new Document("$set", document), new UpdateOptions().upsert( true ));
         if (modelClass.getAnnotation(Model.class).cached())
-            this.cachedObjects.put(object, modelClass);
+           this.cachedObjects.put(object, modelClass);
         object.unlockWrite();
+
     }
 
     @Override

@@ -1,5 +1,6 @@
 package pl.szczurowsky.ratorm.database;
 
+import operation.OperationManager;
 import pl.szczurowsky.ratorm.Model.BaseModel;
 import pl.szczurowsky.ratorm.enums.FilterExpression;
 import pl.szczurowsky.ratorm.exception.*;
@@ -16,6 +17,12 @@ import java.util.stream.Stream;
     Contains all methods and fields required to work
  */
 public interface Database {
+
+    /**
+     * Returns manager of operations
+     * @return OperationManager
+     */
+    OperationManager getOperationManager();
 
     /**
         Connect to database via connection url
@@ -80,6 +87,34 @@ public interface Database {
     <T extends BaseModel> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws NotConnectedToDatabaseException, ModelNotInitializedException, ModelAnnotationMissingException, NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException;
 
     /**
+     * Save Many object
+     * @param <T> Model class
+     * @param objects Collection of objects
+     * @param modelClass class of object model
+     * @throws NoSerializerFoundException Serializer for field model wasn't found
+     * @throws InstantiationException Java exception when model class wasn't able to create own instance
+     * @throws IllegalAccessException Java security exception
+     * @throws InvocationTargetException Java exception when wasn't able to invoke method
+     * @throws NotConnectedToDatabaseException Not connected to database
+     */
+    <T extends BaseModel> void saveMany(Collection<T> objects, Class<T> modelClass) throws NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NotConnectedToDatabaseException;
+
+    /**
+     * Save Many object
+     * @param <T> Model class
+     * @param objects Collection of objects
+     * @param modelClass class of object model
+     * @param options Options for saving
+     * @throws NoSerializerFoundException Serializer for field model wasn't found
+     * @throws InstantiationException Java exception when model class wasn't able to create own instance
+     * @throws IllegalAccessException Java security exception
+     * @throws InvocationTargetException Java exception when wasn't able to invoke method
+     * @throws NotConnectedToDatabaseException Not connected to database
+     */
+    <T extends BaseModel> void saveMany(Collection<T> objects, Class<T> modelClass, Map<String, Object> options) throws NoSerializerFoundException, InvocationTargetException, InstantiationException, IllegalAccessException, NotConnectedToDatabaseException;
+
+
+    /**
      * Save object
      * @param <T> Model class
      * @param object object
@@ -91,6 +126,20 @@ public interface Database {
      * @throws NotConnectedToDatabaseException Not connected to database
      */
     <T extends BaseModel> void save(T object, Class<T> modelClass) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException;
+
+    /**
+     * Save object
+     * @param <T> Model class
+     * @param object object
+     * @param modelClass class of object model
+     * @param options Options for saving
+     * @throws NoSerializerFoundException Serializer for field model wasn't found
+     * @throws InstantiationException Java exception when model class wasn't able to create own instance
+     * @throws IllegalAccessException Java security exception
+     * @throws InvocationTargetException Java exception when wasn't able to invoke method
+     * @throws NotConnectedToDatabaseException Not connected to database
+     */
+    <T extends BaseModel> void save(T object, Class<T> modelClass, Map<String, Object> options) throws NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException, NotConnectedToDatabaseException;
 
     /**
      * Returns all object which match
