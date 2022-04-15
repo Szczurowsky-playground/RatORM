@@ -52,7 +52,7 @@ public interface Database {
      * @throws MoreThanOnePrimaryKeyException Exception when model have more than one field set as primary key
      * @throws NoPrimaryKeyException Exception when model don't have field as primary key
      */
-    <T extends BaseModel> void initModel(Collection<Class<T>> modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
+    void initModel(Collection<Class<? extends BaseModel>> modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException;
 
     /**
      * Fetch all objects which matches model class
@@ -165,58 +165,6 @@ public interface Database {
      * @throws InvocationTargetException Java exception when wasn't able to invoke method
      */
     <T extends BaseModel> void delete(T object, Class<T> modelClass) throws NotConnectedToDatabaseException, NoSerializerFoundException, InstantiationException, IllegalAccessException, InvocationTargetException;
-
-    /**
-     * Read all objects from cache
-     * @param modelClass Model class
-     * @param <T> Model class
-     * @return List of models
-     * @throws NotCachedException Exception when user tries to read object from cache which don't have cache enabled
-     */
-    <T extends BaseModel> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException;
-
-    /**
-     * Read objects which match condition
-     * @param modelClass Model class
-     * @param field Matching field
-     * @param value matched value to field
-     * @param <T> Model class
-     * @return List of models
-     * @throws NotCachedException Exception when user tries to read object from cache which don't have cache enabled
-     */
-    <T extends BaseModel> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException;
-
-    /**
-     * Refresh whole cache - purging cache and replace it with object from database
-     * @param object object
-     * @param modelClass Model class
-     * @throws NotCachedException Exception when user tries to read object from cache which don't have cache enabled
-     * @throws ModelAnnotationMissingException Exception when model is not using @Model annotation
-     * @throws NotConnectedToDatabaseException Not connected to database
-     * @throws ModelNotInitializedException Model wasn't initialized
-     * @throws NoSerializerFoundException Serializer for field model wasn't found
-     * @throws InvocationTargetException Java exception when wasn't able to invoke method
-     * @throws InstantiationException Java exception when model class wasn't able to create own instance
-     * @throws IllegalAccessException Java security exception
-     */
-    void updateWholeCache(Object object, Class<? extends BaseModel> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException;
-
-    /**
-     *
-     * @param modelClass Model class
-     * @param key Object key in database (field name)
-     * @param value Not serialized value of field
-     * @param <T> Model class
-     * @throws NotCachedException Exception when user tries to read object from cache which don't have cache enabled
-     * @throws ModelAnnotationMissingException Exception when model is not using @Model annotation
-     * @throws NotConnectedToDatabaseException Not connected to database
-     * @throws ModelNotInitializedException Model wasn't initialized
-     * @throws NoSerializerFoundException Serializer for field model wasn't found
-     * @throws InvocationTargetException Java exception when wasn't able to invoke method
-     * @throws InstantiationException Java exception when model class wasn't able to create own instance
-     * @throws IllegalAccessException Java security exception
-     */
-    <T extends BaseModel> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException;
 
     /**
      * Checks is connection to database valid

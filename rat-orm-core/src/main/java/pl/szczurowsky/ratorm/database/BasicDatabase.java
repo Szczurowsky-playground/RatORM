@@ -2,9 +2,7 @@ package pl.szczurowsky.ratorm.database;
 
 import operation.OperationManager;
 import pl.szczurowsky.ratorm.Model.BaseModel;
-import pl.szczurowsky.ratorm.annotation.Model;
 import pl.szczurowsky.ratorm.enums.FilterExpression;
-import pl.szczurowsky.ratorm.exception.*;
 import pl.szczurowsky.ratorm.serializers.BigIntSerializer;
 import pl.szczurowsky.ratorm.serializers.EnumSerializer;
 import pl.szczurowsky.ratorm.serializers.Serializer;
@@ -12,7 +10,6 @@ import pl.szczurowsky.ratorm.serializers.UuidSerializer;
 import pl.szczurowsky.ratorm.serializers.basic.*;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -27,11 +24,6 @@ public abstract class BasicDatabase implements Database {
      * Map of all models and their serializers
      */
     protected final HashMap<Class<?>, Class<? extends Serializer>> serializers = new HashMap<>();
-
-    /**
-     * Cached objects
-     */
-    protected final HashMap<Object, Class<? extends BaseModel>> cachedObjects = new HashMap<>();
 
     /**
      * Map of all models and their operations
@@ -150,43 +142,6 @@ public abstract class BasicDatabase implements Database {
             default:
                 return new LinkedList<>();
         }
-    }
-
-    @Override
-    public <T extends BaseModel> List<T> readAllFromCache(Class<T> modelClass) throws NotCachedException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        return this.cachedObjects.keySet().stream().filter(k -> k.getClass().equals(modelClass)).map(k -> (T) k).collect(Collectors.toList());
-    }
-
-    @Override
-    public <T extends BaseModel> List<T> readMatchingFromCache(Class<T> modelClass, String field, Object value) throws NotCachedException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        return this.filter(modelClass, field, FilterExpression.EQUALS, value, this.readAllFromCache(modelClass).stream());
-    }
-
-    @Override
-    public void updateWholeCache(Object object, Class<? extends BaseModel> modelClass) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        for (Object o : this.cachedObjects.keySet()) {
-            if (o.getClass().equals(modelClass))
-                this.cachedObjects.remove(o);
-        }
-        this.fetchAll(modelClass);
-    }
-
-    @Override
-    public <T extends BaseModel> void updateMatchingCache(Class<T> modelClass, String key, Object value) throws NotCachedException, NoSerializerFoundException, NotConnectedToDatabaseException, ModelNotInitializedException, InvocationTargetException, ModelAnnotationMissingException, InstantiationException, IllegalAccessException {
-        if (!modelClass.getAnnotation(Model.class).cached())
-            throw new NotCachedException();
-        List<T> matchingObjects = this.readMatchingFromCache(modelClass, key, value);
-        for (Object o : this.cachedObjects.keySet()) {
-            if (matchingObjects.contains(o))
-                this.cachedObjects.remove(o);
-        }
-        this.fetchMatching(modelClass, key, value);
     }
 
 

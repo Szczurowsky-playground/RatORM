@@ -18,6 +18,7 @@ import pl.szczurowsky.ratorm.annotation.ModelField;
 import pl.szczurowsky.ratorm.database.BasicDatabase;
 import pl.szczurowsky.ratorm.exception.*;
 import pl.szczurowsky.ratorm.serializers.CollectionSerializer;
+import pl.szczurowsky.ratorm.serializers.ForeignKeySerializer;
 import pl.szczurowsky.ratorm.serializers.MapSerializer;
 import pl.szczurowsky.ratorm.serializers.Serializer;
 
@@ -75,8 +76,8 @@ public class MongoDB extends BasicDatabase {
     }
 
     @Override
-    public final <T extends BaseModel> void initModel(Collection<Class<T>> modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
-        for (Class<T> modelClass : modelClasses) {
+    public final void initModel(Collection<Class<? extends BaseModel>> modelClasses) throws ModelAnnotationMissingException, MoreThanOnePrimaryKeyException, NoPrimaryKeyException {
+        for (Class<? extends BaseModel> modelClass : modelClasses) {
             if (!modelClass.isAnnotationPresent(Model.class))
                 throw new ModelAnnotationMissingException();
             int primaryKeys = 0;
@@ -93,13 +94,6 @@ public class MongoDB extends BasicDatabase {
             if (!this.database.listCollectionNames().into(new ArrayList<>()).contains(tableName))
                 this.database.createCollection(tableName);
             this.collections.put(modelClass ,this.database.getCollection(tableName));
-            if (modelClass.getAnnotation(Model.class).cached() && modelClass.getAnnotation(Model.class).autoFetch()) {
-                try {
-                    this.fetchAll(modelClass);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 
@@ -161,6 +155,8 @@ public class MongoDB extends BasicDatabase {
                     serializer =  MapSerializer.class;
                 else if (Collection.class.isAssignableFrom(declaredField.getType()))
                     serializer = CollectionSerializer.class;
+                else if (declaredField.getAnnotation(ModelField.class).isForeignKey())
+                    serializer = ForeignKeySerializer.class;
                 if (serializer == null) {
                     throw new NoSerializerFoundException();
                 }
@@ -172,6 +168,8 @@ public class MongoDB extends BasicDatabase {
                     methodName+="Map";
                 else if (Collection.class.isAssignableFrom(declaredField.getType()))
                     methodName+="Collection";
+                else if (declaredField.getAnnotation(ModelField.class).isForeignKey())
+                    methodName+="ForeignKey";
                 for (Method declaredMethod : serializer.getDeclaredMethods()) {
                     if (declaredMethod.getName().equals(methodName)) {
                         found = true;
@@ -180,7 +178,9 @@ public class MongoDB extends BasicDatabase {
                             name = declaredField.getName();
                         }
                         String serialized;
-                        if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
+                        if (declaredField.getAnnotation(ModelField.class).isForeignKey())
+                            serialized = (String) declaredMethod.invoke(serializer.newInstance(),declaredField.getType() , value, this.serializers);
+                        else if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
                             serialized = (String) declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
                         else
                             serialized = (String) declaredMethod.invoke(serializer.newInstance(), value);
@@ -210,6 +210,8 @@ public class MongoDB extends BasicDatabase {
                         serializer =  MapSerializer.class;
                     else if (Collection.class.isAssignableFrom(declaredField.getType()))
                         serializer = CollectionSerializer.class;
+                    else if (declaredField.getAnnotation(ModelField.class).isForeignKey())
+                        serializer = ForeignKeySerializer.class;
                     if (serializer == null) {
                         throw new NoSerializerFoundException();
                     }
@@ -227,11 +229,15 @@ public class MongoDB extends BasicDatabase {
                         methodName+="Map";
                     else if (Collection.class.isAssignableFrom(declaredField.getType()))
                         methodName+="Collection";
+                    else if (declaredField.getAnnotation(ModelField.class).isForeignKey())
+                        methodName+="ForeignKey";
                     for (Method declaredMethod : serializer.getDeclaredMethods()) {
                         if (declaredMethod.getName().equals(methodName)) {
                             found = true;
                             Object deserialized;
-                            if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
+                            if (declaredField.getAnnotation(ModelField.class).isForeignKey())
+                                deserialized = declaredMethod.invoke(serializer.newInstance(),declaredField.getType() , value, this);
+                            else if (Map.class.isAssignableFrom(declaredField.getType()) || Collection.class.isAssignableFrom(declaredField.getType()))
                                 deserialized = declaredMethod.invoke(serializer.newInstance(), value, this.serializers);
                             else
                                 deserialized = declaredMethod.invoke(serializer.newInstance(), value);
@@ -242,8 +248,6 @@ public class MongoDB extends BasicDatabase {
                         throw new NoSerializerFoundException();
                 }
             }
-            if (modelClass.getAnnotation(Model.class).cached())
-                this.cachedObjects.put(initializedClass, modelClass);
             deserializedObjects.add(initializedClass);
             if (toBeFixed)
                 this.save(initializedClass, modelClass);
@@ -282,8 +286,6 @@ public class MongoDB extends BasicDatabase {
             this.collections.get(modelClass).bulkWrite(writes);
         for (T object : objects) {
             object.unlockWrite();
-            if (modelClass.getAnnotation(Model.class).cached())
-                this.cachedObjects.put(object, modelClass);
         }
 
     }
@@ -309,8 +311,6 @@ public class MongoDB extends BasicDatabase {
             this.collections.get(modelClass).updateOne((ClientSession) options.get("MongoDB.session"),key, new Document("$set", document), new UpdateOptions().upsert( true ));
         else
             this.collections.get(modelClass).updateOne(key, new Document("$set", document), new UpdateOptions().upsert( true ));
-        if (modelClass.getAnnotation(Model.class).cached())
-           this.cachedObjects.put(object, modelClass);
         object.unlockWrite();
 
     }
@@ -320,8 +320,6 @@ public class MongoDB extends BasicDatabase {
         if (!connected)
             throw new NotConnectedToDatabaseException();
         object.lockWrite();
-        if (modelClass.getAnnotation(Model.class).cached())
-            this.cachedObjects.remove(object);
         Document key = serialize(modelClass, object).get("key", Document.class);
         this.collections.get(modelClass).deleteOne(key);
         object.unlockWrite();
