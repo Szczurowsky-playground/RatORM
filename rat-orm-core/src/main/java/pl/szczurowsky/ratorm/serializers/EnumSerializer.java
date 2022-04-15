@@ -4,7 +4,7 @@ import pl.szczurowsky.ratorm.exception.SerializerException;
 
 public class EnumSerializer implements Serializer<Enum> {
     @Override
-    public String serialize(Object providedObject) throws SerializerException {;
+    public String serialize(Object providedObject) throws SerializerException {
         return String.valueOf(providedObject) + " " + String.valueOf(providedObject.getClass()).replace("class ", "");
     }
 
