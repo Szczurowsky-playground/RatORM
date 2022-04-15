@@ -4,5 +4,7 @@ pl.szczurowsky.ratorm.database
 pl.szczurowsky.ratorm.enums
 pl.szczurowsky.ratorm.exception
 pl.szczurowsky.ratorm.mongodb
+pl.szczurowsky.ratorm.mongodb.operations
+pl.szczurowsky.ratorm.operation
 pl.szczurowsky.ratorm.serializers
 pl.szczurowsky.ratorm.serializers.basic

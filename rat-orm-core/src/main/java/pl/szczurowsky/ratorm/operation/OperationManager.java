@@ -1,4 +1,4 @@
-package operation;
+package pl.szczurowsky.ratorm.operation;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -1,6 +1,6 @@
 package pl.szczurowsky.ratorm.database;
 
-import operation.OperationManager;
+import pl.szczurowsky.ratorm.operation.OperationManager;
 import pl.szczurowsky.ratorm.Model.BaseModel;
 import pl.szczurowsky.ratorm.enums.FilterExpression;
 import pl.szczurowsky.ratorm.serializers.BigIntSerializer;

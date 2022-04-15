@@ -1,7 +1,7 @@
 package pl.szczurowsky.ratorm.mongodb.operations;
 
 import com.mongodb.client.ClientSession;
-import operation.BaseOperation;
+import pl.szczurowsky.ratorm.operation.BaseOperation;
 import pl.szczurowsky.ratorm.database.Database;
 import pl.szczurowsky.ratorm.exception.PassedWrongDriverToOperationException;
 import pl.szczurowsky.ratorm.mongodb.MongoDB;

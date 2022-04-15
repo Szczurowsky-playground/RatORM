@@ -1,4 +1,4 @@
-package operation;
+package pl.szczurowsky.ratorm.operation;
 
 import pl.szczurowsky.ratorm.database.Database;
 
