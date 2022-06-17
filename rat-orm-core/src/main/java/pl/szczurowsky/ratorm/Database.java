@@ -1,19 +1,23 @@
 package pl.szczurowsky.ratorm;
 
 import pl.szczurowsky.ratorm.credentials.Credentials;
+import pl.szczurowsky.ratorm.enums.FilterExpression;
 import pl.szczurowsky.ratorm.exceptions.AlreadyConnectedException;
 import pl.szczurowsky.ratorm.exceptions.ModelException;
 import pl.szczurowsky.ratorm.exceptions.NotConnectedToDatabaseException;
 import pl.szczurowsky.ratorm.exceptions.OperationException;
 import pl.szczurowsky.ratorm.model.Model;
+import pl.szczurowsky.ratorm.operation.OperationManager;
 import pl.szczurowsky.ratorm.serializers.ComplexSerializer;
 import pl.szczurowsky.ratorm.serializers.Serializer;
 import pl.szczurowsky.ratorm.serializers.basic.*;
 import pl.szczurowsky.ratorm.serializers.complex.CollectionSerializer;
 import pl.szczurowsky.ratorm.serializers.complex.MapSerializer;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Abstraction for database.
@@ -30,6 +34,11 @@ public abstract class Database {
      * HashMap with all complex serializers
      */
     protected final HashMap<Class<?>, Class<? extends ComplexSerializer>> complexSerializers = new HashMap<>();
+
+    /**
+     * Operation manager
+     */
+    protected final OperationManager operationManager = new OperationManager();
 
     /**
      * HashMap of all initialized models
@@ -59,6 +68,14 @@ public abstract class Database {
     }
 
     /**
+     * Getter for operation manager
+     * @return operation manager
+     */
+    public OperationManager getOperationManager() {
+        return operationManager;
+    }
+
+    /**
      * Registers serializer for given class
      * @param classType Class to register
      * @param serializer Class of serializer
@@ -74,6 +91,79 @@ public abstract class Database {
      */
     public void registerComplexSerializer(Class<?> classType, Class<? extends ComplexSerializer> serializer) {
         complexSerializers.put(classType, serializer);
+    }
+
+    public <T extends Model> List<T> filter(Class<T> modelClass, String field, FilterExpression expression, Object value, Collection<T> objects) {
+        switch (expression) {
+            case GREATER_THAN:
+                return objects.stream().filter(o -> {
+                    try {
+                        Field _field = o.getClass().getDeclaredField(field);
+                        _field.setAccessible(true);
+                        return Long.parseLong(_field.get(o).toString()) > Long.parseLong(value.toString());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }).map(k -> k).collect(Collectors.toList());
+            case LESS_THAN:
+                return objects.stream().filter(o -> {
+                    try {
+                        Field _field = o.getClass().getDeclaredField(field);
+                        _field.setAccessible(true);
+                        return Long.parseLong(_field.get(o).toString()) < Long.parseLong(value.toString());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }).map(k -> k).collect(Collectors.toList());
+            case EQUALS:
+                return objects.stream().filter(o -> {
+                    try {
+                        Field _field = o.getClass().getDeclaredField(field);
+                        _field.setAccessible(true);
+                        return _field.get(o).equals(value);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }).map(k -> k).collect(Collectors.toList());
+            case NOT_EQUALS:
+                return objects.stream().filter(o -> {
+                    try {
+                        Field _field = o.getClass().getDeclaredField(field);
+                        _field.setAccessible(true);
+                        return !_field.get(o).equals(value);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }).map(k -> k).collect(Collectors.toList());
+            case GREATER_THAN_EQUALS:
+                return objects.stream().filter(o -> {
+                    try {
+                        Field _field = o.getClass().getDeclaredField(field);
+                        _field.setAccessible(true);
+                        return Long.parseLong(_field.get(o).toString()) >= Long.parseLong(value.toString());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }).map(k -> k).collect(Collectors.toList());
+            case LESS_THAN_EQUALS:
+                return objects.stream().filter(o -> {
+                    try {
+                        Field _field = o.getClass().getDeclaredField(field);
+                        _field.setAccessible(true);
+                        return Long.parseLong(_field.get(o).toString()) <= Long.parseLong(value.toString());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return false;
+                }).map(k -> k).collect(Collectors.toList());
+            default:
+                return new LinkedList<>();
+        }
     }
 
     /**
@@ -117,6 +207,8 @@ public abstract class Database {
      * @throws OperationException if operation was not successful
      */
     public abstract <T extends Model> List<T> fetchAll(Class<T> model) throws OperationException;
+
+    public abstract <T extends Model> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws OperationException;
 
     /**
      * Save object to database

@@ -108,6 +108,20 @@ public class MongoDB extends Database {
     }
 
     @Override
+    public <T extends Model> List<T> fetchMatching(Class<T> modelClass, String key, Object value) throws OperationException {
+        try {
+            if (!connected)
+                throw new OperationException("Database is not connected");
+            if (!this.models.containsValue(modelClass))
+                throw new OperationException("Model " + modelClass.getName() + " is not initialized");
+            MongoCollection<Document> collection = this.database.getCollection(modelClass.getAnnotation(DBModel.class).tableName());
+            return deserialize(modelClass, collection.find(new Document(key, SerializerUtil.serializeValue(value.getClass(), value, serializers, complexSerializers))));
+        } catch (Exception e) {
+            throw new OperationException("Error while fetching matching documents \nException:\n" + e.getMessage());
+        }
+    }
+
+    @Override
     public <T extends Model> void save(T model) throws OperationException {
         this.saveToDatabase(model, new HashMap<>());
     }
@@ -145,6 +159,14 @@ public class MongoDB extends Database {
     @Override
     public <T extends Model> void deleteMany(Collection<T> models, HashMap<String, Object> options) throws OperationException {
         this.deleteManyFromDatabase(models, options);
+    }
+
+    /**
+     * Starts session
+     * @return Session
+     */
+    public ClientSession startSession() {
+        return this.client.startSession();
     }
 
     private <T extends Model> void deleteManyFromDatabase(Collection<T> models, HashMap<String, Object> options) throws OperationException {
