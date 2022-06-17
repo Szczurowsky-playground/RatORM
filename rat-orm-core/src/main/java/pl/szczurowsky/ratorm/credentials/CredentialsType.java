@@ -1,7 +1,7 @@
 package pl.szczurowsky.ratorm.credentials;
 
 public enum CredentialsType {
-    LOGIN,
+    USERNAME,
     PASSWORD,
     DATABASE_NAME,
     HOST,
