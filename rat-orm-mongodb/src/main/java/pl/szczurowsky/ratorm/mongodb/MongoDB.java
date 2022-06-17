@@ -318,7 +318,7 @@ public class MongoDB extends Database {
                             declaredField.set(model, SerializerUtil.deserializeValue(declaredField.getType(), (String) value, serializers, complexSerializers));
                         deserialized.add(model);
                     }
-                    if (toBeFixed) {}
+                    if (toBeFixed)
                         this.save(model);
                 }
             }
