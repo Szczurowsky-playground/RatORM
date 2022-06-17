@@ -62,6 +62,7 @@ public abstract class Database {
         registerSerializer(Short.class, ShortSerializer.class);
         registerSerializer(UUID.class, UUIDSerializer.class);
         registerSerializer(Duration.class, DurationSerializer.class);
+        registerSerializer(Enum.class, EnumSerializer.class);
 
         registerComplexSerializer(AbstractMap.class, MapSerializer.class);
         registerComplexSerializer(AbstractList.class, CollectionSerializer.class);

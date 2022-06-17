@@ -41,11 +41,11 @@ Framework Core
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-core</artifactId>
-    <version>2.0.0-alpha</version>
+    <version>2.0.0-alpha1</version>
 </dependency>
 ```
 ```groovy
-implementation 'pl.szczurowsky:rat-orm-core:2.0.0-alpha'
+implementation 'pl.szczurowsky:rat-orm-core:2.0.0-alpha1'
 ```
 
 Database
@@ -54,11 +54,11 @@ Database
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-type</artifactId>
-    <version>2.0.0-alpha</version>
+    <version>2.0.0-alpha1</version>
 </dependency>
 ```
 ```groovy
-implementation 'pl.szczurowsky:rat-orm-type:2.0.0-alpha'
+implementation 'pl.szczurowsky:rat-orm-type:2.0.0-alpha1'
 ```
 
 ## Usage
