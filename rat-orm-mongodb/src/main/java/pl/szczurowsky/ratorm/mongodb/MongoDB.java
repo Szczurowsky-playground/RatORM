@@ -350,7 +350,7 @@ public class MongoDB extends Database {
             }
             return new Document("key", key).append("value", document);
         } catch (Exception e) {
-            throw new OperationException("Error while deserializing model " + classType.getName() + "\nException:\n " + e.getMessage());
+            throw new OperationException("Error while serializing model " + classType.getName() + "\nException:\n " + e.getMessage());
         }
     }
 
