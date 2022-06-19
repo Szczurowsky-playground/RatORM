@@ -18,7 +18,6 @@ import pl.szczurowsky.ratorm.exceptions.OperationException;
 import pl.szczurowsky.ratorm.model.Model;
 import pl.szczurowsky.ratorm.util.SerializerUtil;
 
-import java.lang.reflect.Type;
 import java.util.*;
 
 public class MongoDB extends Database {
@@ -339,7 +338,6 @@ public class MongoDB extends Database {
                     if (name.equals("")) {
                         name = declaredField.getName();
                     }
-                    Type fieldType = declaredField.getGenericType();
                     Object value = declaredField.get(model);
                     String serialized = SerializerUtil.serializeValue(declaredField.getType(), value, serializers, complexSerializers);
                     document.put(name, serialized);
