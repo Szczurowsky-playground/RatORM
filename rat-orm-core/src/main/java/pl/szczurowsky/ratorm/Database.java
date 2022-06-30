@@ -15,7 +15,9 @@ import pl.szczurowsky.ratorm.serializers.complex.CollectionSerializer;
 import pl.szczurowsky.ratorm.serializers.complex.MapSerializer;
 
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,6 +65,8 @@ public abstract class Database {
         registerSerializer(UUID.class, UUIDSerializer.class);
         registerSerializer(Duration.class, DurationSerializer.class);
         registerSerializer(Enum.class, EnumSerializer.class);
+        registerSerializer(LocalDateTime.class, LocalDateTimeSerializer.class);
+        registerSerializer(InetAddress.class, InetAddressSerializer.class);
 
         registerComplexSerializer(AbstractMap.class, MapSerializer.class);
         registerComplexSerializer(AbstractList.class, CollectionSerializer.class);
