@@ -8,7 +8,7 @@ import java.net.InetAddress;
 public class InetAddressSerializer implements Serializer<InetAddress> {
     @Override
     public String serialize(InetAddress inetAddress) throws SerializerException {
-        return inetAddress.toString();
+        return inetAddress.getHostAddress();
     }
 
     @Override
