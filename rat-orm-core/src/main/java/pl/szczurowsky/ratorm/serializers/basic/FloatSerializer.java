@@ -5,7 +5,7 @@ import pl.szczurowsky.ratorm.serializers.Serializer;
 public class FloatSerializer implements Serializer<Float> {
 
     @Override
-    public String serialize(Object providedObject) {
+    public String serialize(Float providedObject) {
         return String.valueOf(providedObject);
     }
 

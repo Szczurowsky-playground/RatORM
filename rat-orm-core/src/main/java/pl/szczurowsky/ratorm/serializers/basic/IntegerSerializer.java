@@ -5,7 +5,7 @@ import pl.szczurowsky.ratorm.serializers.Serializer;
 public class IntegerSerializer implements Serializer<Integer> {
 
     @Override
-    public String serialize(Object providedObject) {
+    public String serialize(Integer providedObject) {
         return String.valueOf(providedObject);
     }
 

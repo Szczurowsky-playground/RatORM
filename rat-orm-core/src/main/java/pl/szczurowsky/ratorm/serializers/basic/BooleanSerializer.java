@@ -5,7 +5,7 @@ import pl.szczurowsky.ratorm.serializers.Serializer;
 public class BooleanSerializer implements Serializer<Boolean> {
 
     @Override
-    public String serialize(Object providedObject) {
+    public String serialize(Boolean providedObject) {
         return String.valueOf(providedObject);
     }
 

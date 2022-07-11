@@ -5,7 +5,7 @@ import pl.szczurowsky.ratorm.serializers.Serializer;
 public class CharacterSerializer implements Serializer<Character> {
 
     @Override
-    public String serialize(Object providedObject) {
+    public String serialize(Character providedObject) {
         return String.valueOf(providedObject);
     }
 

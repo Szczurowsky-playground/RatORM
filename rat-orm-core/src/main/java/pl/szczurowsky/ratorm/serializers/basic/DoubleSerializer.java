@@ -5,7 +5,7 @@ import pl.szczurowsky.ratorm.serializers.Serializer;
 public class DoubleSerializer implements Serializer<Double> {
 
     @Override
-    public String serialize(Object providedObject) {
+    public String serialize(Double providedObject) {
         return String.valueOf(providedObject);
     }
 

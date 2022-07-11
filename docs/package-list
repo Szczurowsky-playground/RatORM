@@ -1,10 +1,12 @@
-pl.szczurowsky.ratorm.Model
-pl.szczurowsky.ratorm.annotation
-pl.szczurowsky.ratorm.database
+pl.szczurowsky.ratorm
+pl.szczurowsky.ratorm.annotations
+pl.szczurowsky.ratorm.credentials
 pl.szczurowsky.ratorm.enums
-pl.szczurowsky.ratorm.exception
+pl.szczurowsky.ratorm.exceptions
+pl.szczurowsky.ratorm.model
 pl.szczurowsky.ratorm.mongodb
-pl.szczurowsky.ratorm.mongodb.operations
 pl.szczurowsky.ratorm.operation
 pl.szczurowsky.ratorm.serializers
 pl.szczurowsky.ratorm.serializers.basic
+pl.szczurowsky.ratorm.serializers.complex
+pl.szczurowsky.ratorm.util

@@ -5,11 +5,11 @@ import java.util.List;
 
 public class OperationManager {
 
-    protected List<BaseOperation> operations = new LinkedList<>();
+    protected List<Operation> operations = new LinkedList<>();
     protected List<Thread> threads = new LinkedList<>();
 
 
-    public int execute(BaseOperation operation) {
+    public int execute(Operation operation) {
         Thread thread = new Thread(operation);
         threads.add(thread);
         operations.add(operation);
@@ -19,7 +19,7 @@ public class OperationManager {
         return threads.size() - 1;
     }
 
-    public void cancel(BaseOperation operation) {
+    public void cancel(Operation operation) {
         threads.get(operation.getId()).interrupt();
         threads.remove(operation);
         operations.remove(operation);

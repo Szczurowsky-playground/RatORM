@@ -41,11 +41,11 @@ Framework Core
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-core</artifactId>
-    <version>1.4.0</version>
+    <version>2.0.0-alpha1</version>
 </dependency>
 ```
 ```groovy
-implementation 'pl.szczurowsky:rat-orm-core:1.4.0'
+implementation 'pl.szczurowsky:rat-orm-core:2.0.0-alpha1'
 ```
 
 Database
@@ -54,11 +54,11 @@ Database
 <dependency>
     <groupId>pl.szczurowsky</groupId>
     <artifactId>rat-orm-type</artifactId>
-    <version>1.4.0</version>
+    <version>2.0.0-alpha1</version>
 </dependency>
 ```
 ```groovy
-implementation 'pl.szczurowsky:rat-orm-type:1.4.0'
+implementation 'pl.szczurowsky:rat-orm-type:2.0.0-alpha1'
 ```
 
 ## Usage
@@ -77,12 +77,7 @@ public class Example {
     public void connect() {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
-        Map<String, String> credentials = new HashMap<>();
-        credentials.put("name", "name of db");
-        credentials.put("username", "username");
-        credentials.put("password", "password");
-        credentials.put("host", "DNS or IP");
-        credentials.put("port", "port");
+        Credentials credentials = new Credentials("Username", "Password", "Name of database", "Host", Port);
         this.database.connect(credentials);
     }
     
@@ -118,14 +113,14 @@ public class Example {
 <summary>Model class</summary>
 
 ```java
-@Model(tableName="example-table")
+@DBModel(tableName="example-table")
 public class ExampleModel extends BaseModel {
-    @ModelField(isPrimaryKey = true)
+    @Field(isPrimaryKey = true)
     int id;
-    @ModelField
+    @Field
     String username = "default value";
     // Custom table name
-    @ModelField(name="test")
+    @Field(name="test")
     String oneName;
 }
 ```
@@ -144,9 +139,7 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(Arrays.asList(
-                ExampleModel.class
-        ));
+        this.database.initModel(Collections.singleton(ExampleModel.class));
     }
     
 }
@@ -169,10 +162,8 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(Arrays.asList(
-                ExampleModel.class
-        ));
-        this.database.fetchAll(ExampleModel.class);
+        this.database.initModel(Collections.singleton(ExampleModel.class));
+        List<TestModel> fetched = this.database.fetchAll(ExampleModel.class);
     }
     
 }
@@ -193,10 +184,8 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(Arrays.asList(
-                ExampleModel.class
-        ));
-        this.database.fetchMatching(ExampleModel.class, "Key", "Value");
+        this.database.initModel(Collections.singleton(ExampleModel.class));
+        List<TestModel> fetched = this.database.fetchMatching(ExampleModel.class, "Key", "Value");
     }
     
 }
@@ -219,11 +208,9 @@ public class Example {
         // Replace MongoDB() with your database type
         this.database = new MongoDB();
         this.database.connect("URI String");
-        this.database.initModel(Arrays.asList(
-                ExampleModel.class
-        ));
+        this.database.initModel(Collections.singleton(ExampleModel.class));
         ExampleModel exampleModel = new ExampleModel();
-        this.database.save(exampleModel, ExampleModel.class);
+        this.database.save(exampleModel);
     }
     
 }

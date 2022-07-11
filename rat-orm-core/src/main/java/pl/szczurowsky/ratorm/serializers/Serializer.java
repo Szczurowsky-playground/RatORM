@@ -1,6 +1,6 @@
 package pl.szczurowsky.ratorm.serializers;
 
-import pl.szczurowsky.ratorm.exception.SerializerException;
+import pl.szczurowsky.ratorm.exceptions.SerializerException;
 
 /**
  * Interface for serializers which provide easy data-saving custom data-types to database
@@ -14,7 +14,7 @@ public interface Serializer<T> {
      * @return string to store in database
      * @throws SerializerException Wasn't able to serialize object
      */
-    String serialize(Object providedObject) throws SerializerException;
+    String serialize(T providedObject) throws SerializerException;
 
     /**
      * Deserialize provided string to T
